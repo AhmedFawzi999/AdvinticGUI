@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1121</width>
+    <height>705</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0">
+     <widget class="PlotWidget" name="View"/>
+    </item>
+    <item row="0" column="1">
+     <layout class="QHBoxLayout" name="horizontalLayout"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionaddPoints"/>
+   <addaction name="actiondeleteShape"/>
+   <addaction name="actionZoom"/>
+   <addaction name="separator"/>
+   <addaction name="separator"/>
+   <addaction name="actionOpen_Dicom"/>
+  </widget>
+  <action name="actionOpen_Dicom">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/file_open_FILL0_wght400_GRAD200_opsz48.png</normaloff>C:/Users/asemi/Downloads/file_open_FILL0_wght400_GRAD200_opsz48.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open Dicom</string>
+   </property>
+  </action>
+  <action name="actionZoom">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/search_FILL1_wght600_GRAD200_opsz48.png</normaloff>C:/Users/asemi/Downloads/search_FILL1_wght600_GRAD200_opsz48.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom</string>
+   </property>
+  </action>
+  <action name="actionaddPoints">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/shape_line_FILL0_wght400_GRAD200_opsz48.png</normaloff>C:/Users/asemi/Downloads/shape_line_FILL0_wght400_GRAD200_opsz48.png</iconset>
+   </property>
+   <property name="text">
+    <string>addPoints</string>
+   </property>
+  </action>
+  <action name="actiondeleteShape">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/delete_FILL0_wght400_GRAD200_opsz48.png</normaloff>C:/Users/asemi/Downloads/delete_FILL0_wght400_GRAD200_opsz48.png</iconset>
+   </property>
+   <property name="text">
+    <string>deleteShape</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PlotWidget</class>
+   <extends>QGraphicsView</extends>
+   <header location="global">pyqtgraph</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
