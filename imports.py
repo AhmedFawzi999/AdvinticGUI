@@ -29,4 +29,10 @@ import os
 from scipy import ndimage 
 from scipy.interpolate import CubicSpline
 from math import sqrt 
+from matplotlib.path import Path
+from turtle import color, pen, pencolor
+from sympy import symbols
+from os import listdir
+from os.path import isfile, join
+
 

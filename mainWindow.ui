@@ -35,7 +35,10 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionaddPoints"/>
+   <addaction name="actionTranslate"/>
+   <addaction name="actionscale"/>
    <addaction name="actiondeleteShape"/>
+   <addaction name="actionDelPoint"/>
    <addaction name="actionZoom"/>
    <addaction name="separator"/>
    <addaction name="separator"/>
@@ -78,15 +81,58 @@
    </property>
   </action>
   <action name="actiondeleteShape">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
    <property name="icon">
     <iconset>
      <normaloff>C:/Users/asemi/Downloads/delete_FILL0_wght400_GRAD200_opsz48.png</normaloff>C:/Users/asemi/Downloads/delete_FILL0_wght400_GRAD200_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>deleteShape</string>
+   </property>
+  </action>
+  <action name="actionDelPoint">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/hide_source_FILL0_wght600_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/hide_source_FILL0_wght600_GRAD0_opsz48.png</iconset>
+   </property>
+   <property name="text">
+    <string>DelPoint</string>
+   </property>
+  </action>
+  <action name="actionTranslate">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/open_with_FILL0_wght500_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/open_with_FILL0_wght500_GRAD0_opsz48.png</iconset>
+   </property>
+   <property name="text">
+    <string>Translate</string>
+   </property>
+  </action>
+  <action name="actionincrease">
+   <property name="text">
+    <string>increase</string>
+   </property>
+  </action>
+  <action name="actiondecrease">
+   <property name="text">
+    <string>decrease</string>
+   </property>
+  </action>
+  <action name="actionscale">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/aspect_ratio_FILL0_wght600_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/aspect_ratio_FILL0_wght600_GRAD0_opsz48.png</iconset>
+   </property>
+   <property name="text">
+    <string>scale</string>
    </property>
   </action>
  </widget>
