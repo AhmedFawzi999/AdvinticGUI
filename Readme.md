@@ -66,7 +66,7 @@ form the difference.
 > This Function unstacks the data into x and y columns
 
 9- ScaleUpDown Function
->This Function is responsible to increase the scale of the shape drawn by the user it increases it or decreases it.Then it gets the data of the current shape drawn by the user in this particular slice and Check if the user wants to increase or decrease the scale.It then changes the data of the shape by the new scale
+>This Function is responsible to increase the scale of the shape drawn by the user it increases it or decreases it.Then it gets the data of the current shape drawn by the user in this particular slice and Check if the user wants to increase or decrease the scale whether all the shape or in the X direction only or in the y direction only.It then changes the data of the shape by the new scale
 
 10- EventFilter Function
 
@@ -75,9 +75,15 @@ form the difference.
 >Second event is that if the user is scrolling the mouse wheel and the scale var is true so increasing of 
 decreasing the scale of the shape
  
->Third Event is that the user drags a point so the entire shape is updated
+> Third event is that if the user is scrolling the mouse wheel and the scaleXvar is true so increasing of 
+decreasing the scale of the shape
 
-> Fourth event is that the user double clicks a point and the delete action is pressed so it deletes the current clicked point
+> Fourth event is that if the user is scrolling the mouse wheel and the scaleYvar is true so increasing of 
+decreasing the scale of the shape
+
+>Fifth Event is that the user drags a point so the entire shape is updated
+
+> Sixth event is that the user double clicks a point and the delete action is pressed so it deletes the current clicked point
 
 11- DrawPoints Function
 

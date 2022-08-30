@@ -190,6 +190,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.DistanceArray=[]  # Array to store distances between points
         self.firstime=[]  # Array to store is a slice is visited before by the user and will help in the deleting and insertions
         self.scaleVar=False # Variable to check if scale action is toggled or no
+        self.scaleYVar=False # Variable to check if scaleYaction is toggled or no
+        self.scaleXVar=False # Variable to check if scaleXaction is toggled or no
+
 
 
         # Toggled and connecting each action button to its fucntion
@@ -200,17 +203,52 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.ui.actionDelPoint.toggled.connect(self.DeleteSinglePoint)
         self.ui.actionTranslate.toggled.connect(self.Translate)
         self.ui.actionscale.toggled.connect(self.Scale)
+        self.ui.actionYscale.toggled.connect(self.Yscale)
+        self.ui.actionactionXscale.toggled.connect(self.Xscale)
 
 
         # Creating two objects of Class Graph one to draw the user input points and the other for the interpolated points
         self.points=Graph(self.pointslst,self.indexView)
         self.pointsTrue=Graph(self.pointslst,self.indexView)
+        
+
+        colorButton = QtWidgets.QPushButton("Colors")
+        exitAct = QtWidgets.QAction('Exit', self)
+
+
+        # self.ui.toolBar.addWidget(colorButton)
+        # self.ui.toolBar.addAction(exitAct)
+
+        # menu = QtWidgets.QMenu()
+        # menu.addAction("red")
+        # menu.addAction("green")
+        # menu.addAction("blue")
+        # colorButton.setMenu(menu)
 
 
 
 
 
-
+        # Scale Variable Update Function
+    def Yscale(self):
+        """
+        This Function is called to update the scale varibale when the user clicks its action button 
+        """
+        if self.scaleYVar==True:
+            self.scaleYVar=False
+        else:
+            self.scaleYVar=True
+    
+        # Scale Variable Update Function
+    def Xscale(self):
+        """
+        This Function is called to update the scale varibale when the user clicks its action button 
+        """
+        if self.scaleXVar==True:
+            self.scaleXVar=False
+        else:
+            self.scaleXVar=True
+        
     # Scale Variable Update Function
     def Scale(self):
         """
@@ -331,7 +369,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
 
     # Scale Up and Down Function 
-    def ScaleUpDown(self,var):
+    def ScaleUpDown(self,var,action):
 
         """
         This Function is responsible to increase the scale of the shape drawn by the user it increases it or decreases it
@@ -347,13 +385,25 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         pos = np.array(self.CalculateCenter(*data.T))
 
         # Check if the user wants to increase or decrease the scale
-        if var ==1:
+        if var == "inc":
             mul = 1+0.05    # Zoom in 0.05
         else:
             mul = 1-0.05    # Zoom out 0.05
         
-        # change the data of the shape by the new scale
-        new_data = (data - pos) * mul + pos
+        # change the data of the shape by the new scale according to which action if 1 all shape scale 2 x scale only 3 y scale only
+        if action==1:
+            new_data = (data - pos) * mul + pos
+
+        elif action == 2:
+
+            dataxnew=(data[:,0]-pos[0])*mul+pos[0]
+            new_data=np.column_stack([dataxnew,data[:,1]])
+
+        elif action == 3:
+
+            dataynew=(data[:,1]-pos[1])*mul+pos[1]
+            new_data=np.column_stack([data[:,0],dataynew])
+
         # Call Unstcak Function to separate data into x and y columns
         An, Bn, = self.unstack(new_data, axis=1)
         An=An.tolist()
@@ -379,7 +429,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # First Event is that the user action is a mouse scroll and also the zoomvar and scale var is False
         # So the action now is to scroll through the slices
         if (watched == self.ui.View.viewport() and 
-            event.type() == QtCore.QEvent.Wheel and self.zoomVar==False and self.scaleVar==False):
+            event.type() == QtCore.QEvent.Wheel and self.zoomVar==False and self.scaleVar==False and self.scaleXVar==False and self.scaleYVar==False):
             
             # Check is the scroll is forward + (positive direction)
             if event.angleDelta().y() > 0:
@@ -416,24 +466,51 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # Second event is that if the user is scrolling the mouse wheel and the scale var is true so increasing of 
         # decreasing the scale of the shape
         if (watched == self.ui.View.viewport() and 
-            event.type() == QtCore.QEvent.Wheel and self.zoomVar==False and self.scaleVar==True):
+            event.type() == QtCore.QEvent.Wheel and self.zoomVar==False and self.scaleVar==True and self.scaleXVar==False and self.scaleYVar==False):
 
             # Increase the Scale of the shape
             if event.angleDelta().y() > 0:
-                self.ScaleUpDown(1)
+                self.ScaleUpDown("inc",1)
             # Decrease the Scale of the shape
             else:
-                self.ScaleUpDown(2)
+                self.ScaleUpDown("dec",1)
             return True
 
-        # Third Event is that the user drags a point so the entire shape is updated
+        # Third event is that if the user is scrolling the mouse wheel and the scaleXvar is true so increasing of 
+        # decreasing the scale of the shape
+        if (watched == self.ui.View.viewport() and 
+            event.type() == QtCore.QEvent.Wheel and self.zoomVar==False and self.scaleVar==False and self.scaleXVar==True and self.scaleYVar==False):
+
+            # Increase the Scale of the shape
+            if event.angleDelta().y() > 0:
+                self.ScaleUpDown("inc",2)
+            # Decrease the Scale of the shape
+            else:
+                self.ScaleUpDown("dec",2)
+            return True
+
+        
+        # Fourth event is that if the user is scrolling the mouse wheel and the scaleYvar is true so increasing of 
+        # decreasing the scale of the shape
+        if (watched == self.ui.View.viewport() and 
+            event.type() == QtCore.QEvent.Wheel and self.zoomVar==False and self.scaleVar==False and self.scaleXVar==False and self.scaleYVar==True):
+
+            # Increase the Scale of the shape
+            if event.angleDelta().y() > 0:
+                self.ScaleUpDown("inc",3)
+            # Decrease the Scale of the shape
+            else:
+                self.ScaleUpDown("dec",3)
+            return True
+
+        # Fifth Event is that the user drags a point so the entire shape is updated
         if (watched == self.ui.View.viewport() and 
             event.type() == QtCore.QEvent.MouseMove and self.pointsTrue.Updating==True):
             
             self.DrawPoints()
             self.pointsTrue.Updating=False
         
-        # Fourth event is that the user double clicks a point and the delete action is pressed so it deletes the current clicked point
+        # Sixth event is that the user double clicks a point and the delete action is pressed so it deletes the current clicked point
         if (watched == self.ui.View.viewport() and 
             event.type() == QtCore.QEvent.MouseButtonDblClick and self.pointdelBool==True ):
             self.pointtoDel=self.pointsTrue.pointDel
