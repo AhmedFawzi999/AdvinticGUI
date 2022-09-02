@@ -34,5 +34,7 @@ from turtle import color, pen, pencolor
 from sympy import symbols
 from os import listdir
 from os.path import isfile, join
+from matplotlib.patches import Ellipse
+
 
 

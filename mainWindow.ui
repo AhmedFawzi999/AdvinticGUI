@@ -39,6 +39,8 @@
    <addaction name="actionscale"/>
    <addaction name="actionactionXscale"/>
    <addaction name="actionYscale"/>
+   <addaction name="actioncircle"/>
+   <addaction name="actionelipse"/>
    <addaction name="actiondeleteShape"/>
    <addaction name="actionDelPoint"/>
    <addaction name="actionZoom"/>
@@ -141,6 +143,10 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/resizenorthsouth_100184.png</normaloff>C:/Users/asemi/Downloads/resizenorthsouth_100184.png</iconset>
+   </property>
    <property name="text">
     <string>Yscale</string>
    </property>
@@ -149,8 +155,36 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/resizeeastwest_100180.png</normaloff>C:/Users/asemi/Downloads/resizeeastwest_100180.png</iconset>
+   </property>
    <property name="text">
     <string>Xscale</string>
+   </property>
+  </action>
+  <action name="actioncircle">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/circle_FILL0_wght400_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/circle_FILL0_wght400_GRAD0_opsz48.png</iconset>
+   </property>
+   <property name="text">
+    <string>circle</string>
+   </property>
+  </action>
+  <action name="actionelipse">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/ellipse_adobe_illustrator_tool_circle_icon_189052.png</normaloff>C:/Users/asemi/Downloads/ellipse_adobe_illustrator_tool_circle_icon_189052.png</iconset>
+   </property>
+   <property name="text">
+    <string>elipse</string>
    </property>
   </action>
  </widget>

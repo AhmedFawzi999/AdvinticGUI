@@ -192,6 +192,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.scaleVar=False # Variable to check if scale action is toggled or no
         self.scaleYVar=False # Variable to check if scaleYaction is toggled or no
         self.scaleXVar=False # Variable to check if scaleXaction is toggled or no
+        self.circleVar=False
+        self.ellipseVar=False
 
 
 
@@ -205,6 +207,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.ui.actionscale.toggled.connect(self.Scale)
         self.ui.actionYscale.toggled.connect(self.Yscale)
         self.ui.actionactionXscale.toggled.connect(self.Xscale)
+        self.ui.actioncircle.toggled.connect(self.circle)
+        self.ui.actionelipse.toggled.connect(self.ellipse)
 
 
         # Creating two objects of Class Graph one to draw the user input points and the other for the interpolated points
@@ -214,6 +218,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         colorButton = QtWidgets.QPushButton("Colors")
         exitAct = QtWidgets.QAction('Exit', self)
+
+
 
 
         # self.ui.toolBar.addWidget(colorButton)
@@ -230,6 +236,71 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
 
         # Scale Variable Update Function
+    
+    def circle(self):
+        if self.circleVar == True:
+            self.circleVar=False
+        else:
+            self.circleVar=True
+    def ellipse(self):
+        if self.ellipseVar == True:
+            self.ellipseVar=False
+        else:
+            self.ellipseVar=True
+
+    def DrawEllipse(self,ClickedX,ClickedY):
+        
+        M = 10
+        angle = np.exp(1j * 2 * np.pi / M)
+        angles = np.cumprod(np.ones(M + 1) * angle)
+        x, y = np.real(50*angles), np.imag(25*angles)
+
+
+        center=self.CalculateCenter(x,y)
+        differenceX=ClickedX-center[0]
+        differenceY=ClickedY-center[1]
+        print(center)
+        x=x+differenceX
+        y=y+differenceY
+        x=x.tolist()
+        y=y.tolist()
+        x.pop()
+        y.pop()
+
+        self.pointslst[0]=x
+        self.pointslst[1]=y
+        for i in range(len(x)):
+            self.pointslst[2].append(self.indexView)
+        print(len(self.pointslst[0]),len(self.pointslst[1]),len(self.pointslst[2]))
+        self.DrawPoints()
+
+    def DrawCircle(self,ClickedX,ClickedY):
+        
+        M = 10
+        angle = np.exp(1j * 2 * np.pi / M)
+        angles = np.cumprod(np.ones(M + 1) * angle)
+        x, y = np.real(50*angles), np.imag(50*angles)
+
+
+        center=self.CalculateCenter(x,y)
+        differenceX=ClickedX-center[0]
+        differenceY=ClickedY-center[1]
+        print(center)
+        x=x+differenceX
+        y=y+differenceY
+        x=x.tolist()
+        y=y.tolist()
+        x.pop()
+        y.pop()
+
+        self.pointslst[0]=x
+        self.pointslst[1]=y
+        for i in range(len(x)):
+            self.pointslst[2].append(self.indexView)
+        print(len(self.pointslst[0]),len(self.pointslst[1]),len(self.pointslst[2]))
+        self.DrawPoints()
+
+
     def Yscale(self):
         """
         This Function is called to update the scale varibale when the user clicks its action button 
@@ -568,6 +639,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 adj=x
                 adj=np.asarray(adj)
                 texts = ["Point %d" % i for i in range(1)]
+                
                 # Clearing the gui and then redrawing the new points again
                 self.ui.View.removeItem(self.points)
                 self.points.setData(pos=self.data,adj=adj,pen="blue",symbol='o',size=1, pxMode=True,symbolPen="blue",symbolBrush="blue")
@@ -669,12 +741,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         """
 
         # check if the draw points var is true so it inserts a point in the current position
-        if self.DrawpointsVar==True and self.pointdelBool==False:
+        x = event.pos().x()
+        y = event.pos().y()
+        z=self.indexView
+        if self.DrawpointsVar==True and self.pointdelBool==False and self.circleVar==False and self.ellipseVar==False:
 
             # get the x,y,z of the user click
-            x = event.pos().x()
-            y = event.pos().y()
-            z=self.indexView
+
             # setting the index of the todraw points with the slice number
             self.pointsTrue.indexArr=self.indexView
             # get the number of times the user inserted in this slice
@@ -711,6 +784,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
             # saving the points for expiremental functions 
             np.save('pointslst.npy', self.pointslst,allow_pickle=True)
+        elif self.DrawpointsVar==True and self.pointdelBool==False and self.circleVar==True and self.ellipseVar==False:
+            self.DeleteAllPoints()
+            self.DrawCircle(x,y)
+            self.firstime[self.indexView]+=1
+        elif self.DrawpointsVar==True and self.pointdelBool==False and self.circleVar==False and self.ellipseVar==True:
+            self.DeleteAllPoints()
+            self.DrawEllipse(x,y)
+            self.firstime[self.indexView]+=1
 
         else:
             return None
@@ -739,7 +820,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         x=np.asarray(x)
 
         # get a range of points between the min and max distance with constant spacing
-        self.range_of_points =  np.arange(0, max(x),15)
+        self.range_of_points =  np.arange(0, max(x),5)
 
 
         x=np.asarray(x)
