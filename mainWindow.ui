@@ -35,6 +35,8 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionaddPoints"/>
+   <addaction name="actionouter"/>
+   <addaction name="actioninner"/>
    <addaction name="actionTranslate"/>
    <addaction name="actionscale"/>
    <addaction name="actionactionXscale"/>
@@ -44,6 +46,9 @@
    <addaction name="actiondeleteShape"/>
    <addaction name="actionDelPoint"/>
    <addaction name="actionZoom"/>
+   <addaction name="actionedit"/>
+   <addaction name="actionRoundPointer"/>
+   <addaction name="actionregions"/>
    <addaction name="separator"/>
    <addaction name="separator"/>
    <addaction name="actionOpen_Dicom"/>
@@ -185,6 +190,55 @@
    </property>
    <property name="text">
     <string>elipse</string>
+   </property>
+  </action>
+  <action name="actionedit">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/draw_FILL0_wght400_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/draw_FILL0_wght400_GRAD0_opsz48.png</iconset>
+   </property>
+   <property name="text">
+    <string>edit</string>
+   </property>
+  </action>
+  <action name="actionRoundPointer">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/radio_button_checked_FILL0_wght500_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/radio_button_checked_FILL0_wght500_GRAD0_opsz48.png</iconset>
+   </property>
+   <property name="text">
+    <string>RoundPointer</string>
+   </property>
+  </action>
+  <action name="actionouter">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>outter</string>
+   </property>
+  </action>
+  <action name="actioninner">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>inner</string>
+   </property>
+  </action>
+  <action name="actionregions">
+   <property name="icon">
+    <iconset>
+     <normaloff>C:/Users/asemi/Downloads/donut_small_FILL1_wght500_GRAD200_opsz48.png</normaloff>C:/Users/asemi/Downloads/donut_small_FILL1_wght500_GRAD200_opsz48.png</iconset>
+   </property>
+   <property name="text">
+    <string>regions</string>
    </property>
   </action>
  </widget>
