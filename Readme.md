@@ -54,7 +54,7 @@
 >This Function is responsible to construct the 3d numpy array from the metadata array. It loops on all the slices and gets the pixel array from the metadata.
 
 
-6- load_and_calculate_Thickness Function 
+6-load_and_calculate_Thickness Function 
 
 >This Function is responsible to load the dicom files calculate the thickness of the slices by seeing the position of the slice from the metadata and compare it to the position of the next slice and calculate the thickness 
 form the difference.
@@ -85,6 +85,19 @@ decreasing the scale of the shape
 
 > Sixth event is that the user double clicks a point and the delete action is pressed so it deletes the current clicked point
 
+> Seventh event is that the user clicks and draws free hand it detects the mouse press at first
+
+> Eight event is that the draws free hand it detects the mouse movement path
+
+> Ninth event is that the user finishes drawing and is detected when the mouse release happens
+
+> Tenth event is that the user moves the round pointer around 
+
+> Eleventh event is that the user presses the mouse and the round pointer is active  
+
+>  Twelveth event is that the user releases the mouse and the round pointer is active  
+
+
 11- DrawPoints Function
 
 > This Function is responsible to draw the points on the GUI.It first checks if the array to draw is not emptty so it sets the data and draws it. Then it later checks that the array to draw is 2 points or more so that we could create an array of adjacent points and to pass to the graph class to connect these points. Then after the data has been set we clear the old drawing and draw new one.
@@ -114,6 +127,46 @@ existing points and see to which segment it belongs and insert between the point
 19- TowhichSeg Function
 > This Function is responsible to check the new point is closer to which segment and returns the index of this segment.It claulates the distance between the point and every other point in the interpolated data
 then it checks which point is closer to the inserted point and then this point belongs to the segment the interpolated x,y falls on.
+
+20- RoundPointer Function
+> Round Pointer Variable Update Function
+
+21- DrawEdit Function 
+> Free Hand Draw Variable Update Function
+
+22- Circle Function
+> Circle orelipse Variable Update Functions
+
+23- DrawEllipse Function 
+> This Function is called to draw the ellipse shape inside the function the number of points needed is set to 10 and the angle for each point from the center is calculated then x and y points are generated and then shiffted by a certain value from the center to the clicked point then the points are appended to the array and then drawn.
+
+24- DrawCircle Function 
+> This Function is called to draw the circle shape inside the function the number of points needed is set to 10 and the angle for each point from the center is calculated then x and y points are generated and then shiffted by a certain value from the center to the clicked point then the points are appended to the array and then drawn.
+
+25- isWithin Function
+> This Function is used to check if a point is within the bounds of an image.
+
+26- drawregions Function
+
+> This Function is called to get the regions or sectors of 30 degrees around a circle and get the coordinates of the lines that divided this regions. It first get the indicies of points in this slice and check if they are less than 2 then it creates the mask and fills it to obtain the outer and and inner regions then it gets the difference between the masks to obtain the wall and then these pixels are divided into subregions or segments with angles of 30 degrees from the center of the shape. Then this function draws lines to divide each subregion and show them to the user. 
+
+27-  switch1 Function
+>   Switch 1 is a function that is resonsible to set the variable and arrays to that of the outter region. 
+
+28-  switch2 Function
+>   Switch 2 is a function that is resonsible to set the variable and arrays to that of the inner region.
+
+
+
+
+
+
+
+ 
+
+
+
+
 
 
 

@@ -1330,9 +1330,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     # Draw Points Function
     def DrawPoints(self,pointslst=None,points=None,pointsTrue=None,collor=None):
         
+        """
+        This Function is responsible to draw the points on the GUI
+        """
+        # remove all the lines from the  GUI 
         for i in range(len(self.pointss)):
             self.ui.View.removeItem(self.lines[i]) 
 
+        # this checks that if the user did not change the default values of the drawing then it sets them to the defult values
         if pointslst == None:
             docalc=True
             pointslst=self.pointslst
@@ -1342,9 +1347,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # else:
         #     docalc=False
 
-        """
-        This Function is responsible to draw the points on the GUI
-        """
 
         indecies=[i for i,val in enumerate(pointslst[2]) if val==self.indexView]
 
@@ -1677,7 +1679,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # make the data array the new x,y interpolated points to be used in drawing
         self.data=np.column_stack([self.x_after_interpolate,self.y_after_interpolate])
 
-        
+        # it then sets the interpolated data arr to that of the outer or inner shapes to be later used in the region function
         if self.inner==True:
             self.interpointssarr2[self.indexView][0]=self.x_after_interpolate
             self.interpointssarr2[self.indexView][1]=self.y_after_interpolate
