@@ -247,6 +247,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.firstime1=[]
         self.firstime2=[]
 
+        self.x1,self.y1,self.x2,self.y2=0,0,0,0
 
         self.pointer=Graph(self.pointerlist,self.indexView)
         self.pointerlist[0].append(0)
@@ -263,19 +264,170 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         ## Initializing the 12 lines and array to hold the interpolated points in them
         self.interpointssarr1=[]
         self.interpointssarr2=[]
-        self.line1= pg.LineSegmentROI([[0,0,], [0, 0]], movable=True,rotatable=True, resizable=True)
-        self.line2= pg.LineSegmentROI([[0,0,], [0, 0]], movable=True,rotatable=True, resizable=True)
-        self.line3= pg.LineSegmentROI([[0,0,], [0, 0]], movable=True,rotatable=True, resizable=True)
-        self.line4= pg.LineSegmentROI([[0,0,], [0, 0]], movable=True,rotatable=True, resizable=True)
-        self.line5= pg.LineSegmentROI([[0,0,], [0, 0]], movable=True,rotatable=True, resizable=True)
-        self.line6= pg.LineSegmentROI([[0,0,], [0, 0]], movable=True,rotatable=True, resizable=True)
-        self.line7= pg.LineSegmentROI([[0,0,], [0, 0]], movable=True,rotatable=True, resizable=True)
-        self.line8= pg.LineSegmentROI([[0,0,], [0, 0]], movable=True,rotatable=True, resizable=True)
-        self.line9= pg.LineSegmentROI([[0,0,], [0, 0]], movable=True,rotatable=True, resizable=True)
-        self.line10= pg.LineSegmentROI([[0,0,], [0, 0]], movable=True,rotatable=True, resizable=True)
-        self.line11= pg.LineSegmentROI([[0,0,], [0, 0]], movable=True,rotatable=True, resizable=True)
-        self.line12= pg.LineSegmentROI([[0,0,], [0, 0]], movable=True,rotatable=True, resizable=True)
+        self.segs  = [ [None]*0 for _ in range(12)] 
+        for mini  in self.segs:
+            # xx=[ [None]*0 for _ in range(2)]
+            for i in range(2):
+                # print(counter)
+                mini.append([])
+        self.line1= pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=True, resizable=True)
+        self.line2= pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=True, resizable=True)
+        self.line3= pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=True, resizable=True)
+        self.line4= pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=True, resizable=True)
+        self.line5= pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=True, resizable=True)
+        self.line6= pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=True, resizable=True)
+        self.line7= pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=True, resizable=True)
+        self.line8= pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=True, resizable=True)
+        self.line9= pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=True, resizable=True)
+        self.line10= pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=True, resizable=True)
+        self.line11= pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=True, resizable=True)
+        self.line12= pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=True, resizable=True)
         self.lines = [self.line1, self.line2, self.line3, self.line4,self.line5,self.line6,self.line7,self.line8,self.line9,self.line10,self.line11,self.line12]
+        for lines in self.lines:
+            # lines.stateChanged(finish=True)
+            lines.sigRegionChanged.connect(self.whichline)
+            lines.sigRegionChangeFinished.connect(self.finished)
+    
+    def finished(self,obj):
+        print("hiiiiiiii")
+
+    ## which line function
+    def whichline(self,obj):
+        """
+        This Function is called to update the lines when the user changes them and to save the new regions
+
+        """
+        ## first check which line the user is chaning 
+        objindex=0
+        for i in range(len(self.lines)):
+            if obj==self.lines[i]:
+                objindex=i
+        
+
+        print(objindex)
+        
+        # saving the old x,y values of both handles of the line
+        tempx1=self.x1
+        tempy1=self.y1
+        tempx2=self.x2
+        tempy2=self.y2
+
+        ## now get the new values of the line handle
+        self.x1=obj.listPoints()[0][0]
+        self.y1=obj.listPoints()[0][1]
+        self.x2=obj.listPoints()[1][0]
+        self.y2=obj.listPoints()[1][1]
+        
+        # these variables are used to determin which handle is being moved the first or the second
+        first=False
+        second=False
+
+        # determine which handles
+        if tempx1!= self.x1 or tempy1!=self.y1:
+            first=True
+            print("First")
+        elif tempx2!= self.x2 or tempy2!=self.y2:
+            second=True
+            print("Second")
+        
+        ## now we want to move the handle along the border of the inner or outter 
+        ## to do that we check for the x,y of the handle moved then we calc the distance to the nearest point on the border
+        ## then move the handle to that point 
+        ## this will make an effect of moving along the border
+        min=sys.maxsize
+        if first==True:
+            for i in range(len(self.interpointssarr2[self.indexView][0])):
+                d=self.calc_distance([self.x1, self.y1],[self.interpointssarr2[self.indexView][0][i],self.interpointssarr2[self.indexView][1][i]])
+                if d<min:
+                    min=d
+                    index=i
+            ## move the point to the nearest point on the border
+            obj.movePoint(0,[self.interpointssarr2[self.indexView][0][index],self.interpointssarr2[self.indexView][1][index]])
+        min=sys.maxsize
+        ## do the same for the seconf handle if it is the one moving
+        if second==True:
+            for j in range(len(self.interpointssarr1[self.indexView][0])):
+                d=self.calc_distance([self.x2, self.y2],[self.interpointssarr1[self.indexView][0][j],self.interpointssarr1[self.indexView][1][j]])
+                if d<min:
+                    min=d
+                    index=j
+            obj.movePoint(1,[self.interpointssarr1[self.indexView][0][index],self.interpointssarr1[self.indexView][1][index]])
+        # print(obj.listPoints()[0][0])
+        # print(obj.listPoints()[0][1])
+        # print(obj.listPoints()[1][0])
+        # print(obj.listPoints()[1][1])
+
+        ## now we have the index of the line we could get the index before and index after
+        indexafter=objindex+1
+        indexbefore=objindex-1
+        if objindex==0:
+            indexbefore=len(self.lines)-1
+        if objindex==len(self.lines)-1:
+            indexafter=0
+        
+        print(indexbefore)
+        print(indexafter)
+
+        ## create a list with the same shape as that of the segments to store the new values
+        twosegs  = [ [None]*0 for _ in range(12)] 
+        for mini  in twosegs:
+            # xx=[ [None]*0 for _ in range(2)]
+            for i in range(2):
+                # print(counter)
+                mini.append([])
+        ## now we calculate the equation of the line from x,y of both handles get A,B
+        coefficients = np.polyfit([self.x1,self.x2], [self.y1,self.y2], 1)
+        print('a =', coefficients[0])
+        print('b =', coefficients[1])
+
+        ## do the same for the index before handles
+        x1=self.lines[indexbefore].listPoints()[0][0]
+        y1=self.lines[indexbefore].listPoints()[0][1]
+        x2=self.lines[indexbefore].listPoints()[1][0]
+        y2=self.lines[indexbefore].listPoints()[1][1]
+        coefficients2 = np.polyfit([x1,x2], [y1,y2], 1)
+        
+        ## now we obtain the values of the segments of that before the line and after the line
+        
+        data1=np.column_stack([self.segs[objindex][0], self.segs[objindex][1]])
+        print(len(self.segs[objindex][0]),len(self.segs[objindex][1]))
+        data2=np.column_stack([self.segs[indexbefore][0], self.segs[indexbefore][1]])
+        print(len(self.segs[indexbefore][0]),len(self.segs[indexbefore][1]))
+
+        datan=np.vstack((data2,data1))
+
+        ## no check for the points that fall in the segment that is between the line and the line before
+        for i in range(len(datan)):
+            if ((coefficients[0]*datan[i][0]+coefficients[1]-datan[i][1])*(coefficients2[0]*datan[i][0]+coefficients2[1]-datan[i][1]) < 0 ):
+                twosegs[indexbefore][0].append(datan[i][0])
+                twosegs[indexbefore][1].append(datan[i][1])
+            
+        ## repeat the same proccess for the line after and obtain the new points that fall into that segment
+        x1=self.lines[indexafter].listPoints()[0][0]
+        y1=self.lines[indexafter].listPoints()[0][1]
+        x2=self.lines[indexafter].listPoints()[1][0]
+        y2=self.lines[indexafter].listPoints()[1][1]
+        coefficients2 = np.polyfit([x1,x2], [y1,y2], 1)
+        
+
+        
+        # data1=np.column_stack([self.segs[objindex][0], self.segs[objindex][1]])
+        # data3=np.column_stack([self.segs[indexbefore][0], self.segs[indexbefore][1]])
+
+        # datan=np.vstack((data1,data2,data3))
+
+        ## do the same as before
+        for j in range(len(datan)):
+            if ((coefficients[0]*datan[j][0]+coefficients[1]-datan[j][1])*(coefficients2[0]*datan[j][0]+coefficients2[1]-datan[j][1]) < 0 ):
+                twosegs[objindex][0].append(datan[j][0])
+                twosegs[objindex][1].append(datan[j][1])
+        if first ==True or second==True:
+            self.segs[indexbefore]=twosegs[indexbefore].copy()
+            self.segs[objindex]=twosegs[objindex].copy()
+        
+        np.save('segs.npy',self.segs,allow_pickle=True)
+            # print(obj.getLocalHandlePositions())
+            # print(obj.getLocalHandlePositions()[0][1][1])
 
     def drawregions(self):
 
@@ -367,8 +519,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 Groundy.append(arr[i][0])
             
             ## Array to store the points of each segment 
-            segs  = [ [None]*0 for _ in range(12)] 
-            for mini  in segs:
+            self.segs  = [ [None]*0 for _ in range(12)] 
+            for mini  in self.segs:
                 # xx=[ [None]*0 for _ in range(2)]
                 for i in range(2):
                     # print(counter)
@@ -392,7 +544,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             radius=max +10
 
             # check the points belong to which seg
-            self.checkPoint(radius,centerx,centery,Groundx,Groundy,segs)
+            self.checkPoint(radius,centerx,centery,Groundx,Groundy,self.segs)
             
             startAngle=0
             endAngle = startAngle+30
@@ -441,8 +593,21 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             # now draw the lines
             for i in range(len(self.pointss)):
                 self.ui.View.removeItem(self.lines[i])
-                self.lines[i] = pg.LineSegmentROI([[self.pointss[i][0][0], self.pointss[i][0][1],], [self.pointss[i][1][0], self.pointss[i][1][1]]], pen="white",movable=True,rotatable=True, resizable=True,handles=(None, None))
-                self.ui.View.addItem(self.lines[i])    
+                self.lines[i] = pg.LineSegmentROI([[self.pointss[i][0][0], self.pointss[i][0][1],], [self.pointss[i][1][0], self.pointss[i][1][1]]], pen="white",movable=False,rotatable=True, resizable=True)
+                self.ui.View.addItem(self.lines[i])
+
+                # print(self.lines[3].getLocalHandlePositions())
+                # self.lines[i].stateChanged(finish=True)
+                self.lines[i].sigRegionChanged.connect(self.whichline)
+                self.lines[i].sigRegionChangeFinished.connect(self.finished)
+
+                # self.lines[i].getSceneHandlePositions
+                # self.lines[i].sigHoverEvent.connect(self.whichline)
+        
+                # self.ui.View.removeItem(self.lines[3])
+
+                # print(self.lines[2].getHandles())
+
 
 
     # def togglenewEllipse(self):
@@ -1557,7 +1722,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.ui.View.removeItem(self.points)
         self.ui.View.removeItem(self.pointsTrue)
 
-
+        for i in range(len(self.pointss)):
+                self.ui.View.removeItem(self.lines[i])
 
         self.firstime[self.indexView]=0
 

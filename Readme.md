@@ -156,6 +156,11 @@ then it checks which point is closer to the inserted point and then this point b
 28-  switch2 Function
 >   Switch 2 is a function that is resonsible to set the variable and arrays to that of the inner region.
 
+29 - which line Function
+
+> This Function is called to update the lines when the user changes them and to save the new regions. First we check which line the user is changing then we determine which handle exactly it is moving after determining this we get the index of the line before and after so that we are able to get the segments of these lines then we calculate the eqaution of the lines and determin which point falls in between these lines if it falss with in so we update the regions
+
+
 
 
 
