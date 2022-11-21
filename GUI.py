@@ -352,10 +352,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                     min=d
                     index=j
             obj.movePoint(1,[self.interpointssarr1[self.indexView][0][index],self.interpointssarr1[self.indexView][1][index]])
-        # print(obj.listPoints()[0][0])
-        # print(obj.listPoints()[0][1])
-        # print(obj.listPoints()[1][0])
-        # print(obj.listPoints()[1][1])
+
 
         ## now we have the index of the line we could get the index before and index after
         indexafter=objindex+1
@@ -375,18 +372,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             for i in range(2):
                 # print(counter)
                 mini.append([])
-        ## now we calculate the equation of the line from x,y of both handles get A,B
-        coefficients = np.polyfit([self.x1,self.x2], [self.y1,self.y2], 1)
-        print('a =', coefficients[0])
-        print('b =', coefficients[1])
-
+ 
         ## do the same for the index before handles
-        x1=self.lines[indexbefore].listPoints()[0][0]
-        y1=self.lines[indexbefore].listPoints()[0][1]
-        x2=self.lines[indexbefore].listPoints()[1][0]
-        y2=self.lines[indexbefore].listPoints()[1][1]
-        coefficients2 = np.polyfit([x1,x2], [y1,y2], 1)
-        
+        # x1=self.lines[indexbefore].listPoints()[0][0]
+        # y1=self.lines[indexbefore].listPoints()[0][1]
+        # x2=self.lines[indexbefore].listPoints()[1][0]
+        # y2=self.lines[indexbefore].listPoints()[1][1]
+
         ## now we obtain the values of the segments of that before the line and after the line
         
         data1=np.column_stack([self.segs[objindex][0], self.segs[objindex][1]])
@@ -396,36 +388,31 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         datan=np.vstack((data2,data1))
 
-        ## no check for the points that fall in the segment that is between the line and the line before
+        ## no check for the points that fall in the segment that is to the left or right or on the line
         for i in range(len(datan)):
-            if ((coefficients[0]*datan[i][0]+coefficients[1]-datan[i][1])*(coefficients2[0]*datan[i][0]+coefficients2[1]-datan[i][1]) < 0 ):
+            v1 = (self.x2-self.x1, self.y2-self.y1)   # Vector 1
+            # v2 = (self.x2-275, self.y2-377)   # Vector 2
+            v2 = (self.x2-datan[i][0], self.y2-datan[i][1])   # Vector 2
+
+            xp = v1[0]*v2[1] - v1[1]*v2[0]  # Cross product
+            if xp > 0:
+                print('shemalha')
                 twosegs[indexbefore][0].append(datan[i][0])
-                twosegs[indexbefore][1].append(datan[i][1])
+                twosegs[indexbefore][1].append(datan[i][1])            
+            elif xp < 0:
+                print('yemenha')
+                twosegs[objindex][0].append(datan[i][0])
+                twosegs[objindex][1].append(datan[i][1])
+            else:
+                print('on the same line!')
+                twosegs[objindex][0].append(datan[i][0])
+                twosegs[objindex][1].append(datan[i][1])
             
-        ## repeat the same proccess for the line after and obtain the new points that fall into that segment
-        x1=self.lines[indexafter].listPoints()[0][0]
-        y1=self.lines[indexafter].listPoints()[0][1]
-        x2=self.lines[indexafter].listPoints()[1][0]
-        y2=self.lines[indexafter].listPoints()[1][1]
-        coefficients2 = np.polyfit([x1,x2], [y1,y2], 1)
-        
-
-        
-        # data1=np.column_stack([self.segs[objindex][0], self.segs[objindex][1]])
-        # data3=np.column_stack([self.segs[indexbefore][0], self.segs[indexbefore][1]])
-
-        # datan=np.vstack((data1,data2,data3))
-
-        ## do the same as before
-        for j in range(len(datan)):
-            if ((coefficients[0]*datan[j][0]+coefficients[1]-datan[j][1])*(coefficients2[0]*datan[j][0]+coefficients2[1]-datan[j][1]) < 0 ):
-                twosegs[objindex][0].append(datan[j][0])
-                twosegs[objindex][1].append(datan[j][1])
+        # save the new points
         if first ==True or second==True:
             self.segs[indexbefore]=twosegs[indexbefore].copy()
             self.segs[objindex]=twosegs[objindex].copy()
-        
-        np.save('segs.npy',self.segs,allow_pickle=True)
+            np.save('segs.npy',self.segs,allow_pickle=True)
             # print(obj.getLocalHandlePositions())
             # print(obj.getLocalHandlePositions()[0][1][1])
 
