@@ -1,0 +1,10 @@
+numpy
+scipy
+sympy
+pydicom
+matplotlib
+plotly
+ipywidgets
+PyQt5
+pyqtgraph
+vtk
