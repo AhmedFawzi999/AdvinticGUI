@@ -568,10 +568,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                         Array[1].append(FreeWallArray[1][i])
                     
                         # print(segs)
-                        # print("Point (", Lolaaa[i][0], ",", Lolaaa[i][1], ") "
                         #     "exist in the circle sector")
                     # else:
-                    #     print("Point (", Lolaaa[i][0], ",", Lolaaa[i][1], ") "
                     #         "does not exist in the circle sector")
                 if len(Array[0]) != 0:
                     Areasmall=self.getArea(Array)
@@ -617,10 +615,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                         Array[1].append(FreeWallArray[1][x])
                     
                         # print(segs)
-                        # print("Point (", Lolaaa[i][0], ",", Lolaaa[i][1], ") "
-                        #     "exist in the circle sector")
-                    # else:
-                    #     print("Point (", Lolaaa[i][0], ",", Lolaaa[i][1], ") "
+
                     #         "does not exist in the circle sector")
                 if len(Array[0]) != 0:
                     Areasmall=self.getArea(Array)
@@ -778,11 +773,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                         Array[0].append(InsertionArray[0][i])
                         Array[1].append(InsertionArray[1][i])
                     
-                        # print(segs)
-                        # print("Point (", Lolaaa[i][0], ",", Lolaaa[i][1], ") "
-                        #     "exist in the circle sector")
-                    # else:
-                    #     print("Point (", Lolaaa[i][0], ",", Lolaaa[i][1], ") "
+
                     #         "does not exist in the circle sector")
                 if len(Array[0]) != 0:
                     Areasmall=self.getArea(Array)
@@ -829,13 +820,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             
             p3=np.array([self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]])
             d = self.DistancePointLine(p3[0],p3[1],p1[0],p1[1],p2[0],p2[1])
-            # print(d)
             if d < min:
                 min=d
-                # print(min)
                 point2=p3.copy()
                 secondpoint=[self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]]
-                # print(point2,"henaaaaaa")
         return firstindex,secondpoint
         
     def PlotLines(self,segs,numofsegments,firstp,secondp,insertion1,insertion2,which):
@@ -1383,7 +1371,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                     twosegs[objindex][0].append(datan[i][0])
                     twosegs[objindex][1].append(datan[i][1])
                 
-            # save the new points
+            # save the new points 
             if first ==True or second==True:
                 segs[indexbefore]=twosegs[indexbefore].copy()
                 segs[objindex]=twosegs[objindex].copy()
