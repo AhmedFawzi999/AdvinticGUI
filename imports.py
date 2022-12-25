@@ -9,6 +9,7 @@ import vtk
 from vtk.util import numpy_support
 from vtk.util.numpy_support import vtk_to_numpy, numpy_to_vtk 
 import numpy
+import json
 # common packages 
 import numpy as np 
 import os

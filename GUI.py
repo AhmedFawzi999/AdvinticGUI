@@ -139,7 +139,7 @@ class Graph(pg.GraphItem):
         self.DelVar=True
         for point in pts:
             self.pointDel=pts[0].data()[0]
-            print(pts[0].data()[0],point.pos())
+            # print(pts[0].data()[0],point.pos())
         
 
 #****************************************************************************************************************#
@@ -194,7 +194,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.x_after_interpolate2=[]  # An Array to store the x interpolated points
         self.y_after_interpolate2=[]  # An Array to store the y interpolated points
         self.range_of_points=[] # An Array to store range of points used to obtain x,y interpolated and segments
-        x, y = np.meshgrid(np.arange(512), np.arange(512)) 
+        x, y = np.meshgrid(np.arange(216), np.arange(256)) 
         x, y = x.flatten(), y.flatten()
         self.mespoints = np.vstack((x,y)).T 
         self.DistanceArray=[]  # Array to store distances between points
@@ -213,6 +213,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.collor=0                # Variable to set the color of the pointer
         self.newEllipseVar=False     ## Variable Unused yet
         self.ellipsecounter=0
+        self.radius=0
+        self.radius2=0
+
+        self.centerx=[]
+        self.centery=[]
         self.masko=[]     ##mask of the outer image
         self.maski=[]     ##mask of the inner image
         self.gtrouth=[]   ## gtrouth image of the wall
@@ -234,13 +239,20 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.ui.actioninner.toggled.connect(self.switch2)
         # self.ui.actionnewellipse.toggled.connect(self.togglenewEllipse)
         self.ui.actionregions.triggered.connect(self.drawregions)
-
+        self.ui.actioninsertionpoints.triggered.connect(self.insertion)
+        self.InsertionPoints=[]
+        self.InsertionPoints1=[]
+        self.InsertionPoints2=[]
+        self.insertionVar=False
         # Creating two objects of Class Graph one to draw the user input points and the other for the interpolated points
         self.points=Graph(self.pointslst,self.indexView)
         self.pointsTrue=Graph(self.pointslst,self.indexView)
         self.points1=Graph(self.pointslst1,self.indexView)
         self.pointsTrue1=Graph(self.pointslst1,self.indexView)
-        
+        self.InsertXshape=Graph(self.pointslst1,self.indexView)
+        self.MiddlePointsInsertion=Graph(self.pointslst,self.indexView)
+        self.MiddlePointsFreeWall=Graph(self.pointslst,self.indexView)
+
         self.points2=Graph(self.pointslst2,self.indexView)
         self.pointsTrue2=Graph(self.pointslst2,self.indexView)
 
@@ -253,10 +265,18 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.pointerlist[0].append(0)
         self.pointerlist[1].append(0)
         self.pointerlist[2].append(0)
-
+        self.ui.actionsegments.triggered.connect(self.OnandOffButtons)
+        self.ui.OkayPush.clicked.connect(self.getandCreate)
+        self.numInsertion=0
+        self.numFreeWall=0
+        self.segsInsertion=[]
+        self.segsFreeWall=[]
+        self.boolNum=1
         self.outter=False
         self.inner=False
         self.pointss=[]
+        self.ui.spinBox.setVisible(False)
+        self.ui.OkayPush.setVisible(False)
 
         colorButton = QtWidgets.QPushButton("Colors")
         exitAct = QtWidgets.QAction('Exit', self)
@@ -287,9 +307,926 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             # lines.stateChanged(finish=True)
             lines.sigRegionChanged.connect(self.whichline)
             lines.sigRegionChangeFinished.connect(self.finished)
+        self.LinesArrayInsertion=[]
+        self.LinesArrayFreeWall=[]
+        self.MiddleInsertion=[]
+        self.MiddleFreeWall=[]
+    
+    def OnandOffButtons(self):
+        self.ui.spinBox.setVisible(True)
+        self.ui.OkayPush.setVisible(True)
+
+    def getandCreate(self):
+        if self.boolNum==1:
+            if self.ui.spinBox.value() == 0:
+                self.ui.ToolBarLabel.setText("Please Select a Value greater than 0")
+            else:
+                self.numInsertion=self.ui.spinBox.value()
+                self.ui.ToolBarLabel.setText("Please Select a Value for the number of FreeFall Segments")
+            self.boolNum=2
+        else:
+            if self.ui.spinBox.value() == 0:
+                self.ui.ToolBarLabel.setText("Please Select a Value greater than 0")
+            else:
+                self.numFreeWall=self.ui.spinBox.value()
+                self.ui.ToolBarLabel.setText("Please Select a Value for the number of FreeFall Segments")
+            
+            self.boolNum=1
+            self.ui.ToolBarLabel.setText("Generating Segments")
+            self.CreateSegments()
+
+            
+    def createlines(self,numberofsegments,which):
+
+        if which=="Insertion":
+            self.LinesArrayInsertion[self.indexView]=[]
+            for i in range(numberofsegments):
+                self.LinesArrayInsertion[self.indexView].append(pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=False, resizable=False))
+            for lines in self.LinesArrayInsertion[self.indexView]:
+                lines.sigRegionChanged.connect(self.whichline)
+                lines.sigRegionChangeFinished.connect(self.finished)
+        else:
+            self.LinesArrayFreeWall[self.indexView]=[]
+            for i in range(numberofsegments):
+                self.LinesArrayFreeWall[self.indexView].append(pg.LineSegmentROI([[0,0,], [0, 0]], movable=False,rotatable=False, resizable=False))
+            for lines in self.LinesArrayFreeWall[self.indexView]:
+                lines.sigRegionChanged.connect(self.whichline)
+                lines.sigRegionChangeFinished.connect(self.finished)
+        # print(self.LinesArrayInsertion[self.indexView])
+
+
+    def CreateSegments(self):
+                # get the indicies of points in this slice and check if they are less than 2
+        indecies1=[i for i,val in enumerate(self.pointslst1[2]) if val==self.indexView]
+
+        # if the indicies are less than 2 then do nothing elseget the interpolated x and y points and then create the mask of the outer 
+        if len(indecies1) > 2:
+            xx=self.interpointssarr1[self.indexView][0]
+            yy=self.interpointssarr1[self.indexView][1]
+            # create the mask
+            self.masko = np.zeros([self.ArrayDicom.shape[1], self.ArrayDicom.shape[0]], dtype="uint8")
+            data1=np.column_stack([xx, yy])
+            # fill the mask using the contour
+            cv2.fillPoly(self.masko, np.int32([data1]), 1)
+            # center1=(sum(self.x_after_interpolate) / len(self.x_after_interpolate), sum(self.y_after_interpolate) / len(self.x_after_interpolate))
+            # print("Center Outter:",center1)
+            # np.save('pointslst1.npy', [xx,yy],allow_pickle=True)
+            # np.save('pointslst1original',self.pointslst1,allow_pickle=True)
+            pointslst1=[xx,yy]
+
+
+
+
+        # if the indicies are less than 2 then do nothing elseget the interpolated x and y points and then create the mask of the inner 
+        indecies2=[i for i,val in enumerate(self.pointslst2[2]) if val==self.indexView]
+
+        if len(indecies2) > 2:
+            xx=self.interpointssarr2[self.indexView][0]
+            yy=self.interpointssarr2[self.indexView][1]
+            # create the mask
+            self.maski = np.zeros([self.ArrayDicom.shape[1], self.ArrayDicom.shape[0]], dtype="uint8")
+            data2=np.column_stack([xx, yy])
+            # fill the mask using the contour
+            cv2.fillPoly(self.maski, np.int32([data2]), 1)
+            # center2=(sum(self.interpointssarr2[self.indexView][0][i]) / len(self.x_after_interpolate), sum(self.y_after_interpolate) / len(self.x_after_interpolate))
+            # print("Center Inner:",center2)
+            # np.save('pointslst2.npy', [xx,yy],allow_pickle=True)
+            # np.save('pointslst2original',self.pointslst2,allow_pickle=True)
+            pointslst2=[xx,yy]
+        insertion1=self.InsertionPoints1[self.indexView]
+        insertion2=self.InsertionPoints2[self.indexView]
+        self.getnearest(pointslst1,insertion1)
+        self.getnearest(pointslst2,insertion2)
+        self.InsertionPoints1[self.indexView]=insertion1
+        self.InsertionPoints2[self.indexView]=insertion2
+
+
+        
+        data1=np.column_stack([pointslst1[0], pointslst1[1]])
+        data2=np.column_stack([pointslst2[0], pointslst2[1]])
+
+        # print(data)
+        # plt.gca().invert_xaxis()
+
+        masko = np.zeros([256, 216], dtype="uint8")
+        maski = np.zeros([256, 216], dtype="uint8")
+        cv2.fillPoly(masko, np.int32([data1]), 1)
+        cv2.fillPoly(maski, np.int32([data2]), 1)
+
+        gtrouth=masko-maski
+
+        gtrouth[gtrouth==1]=255
+
+        ret,thresh1 = cv2.threshold(gtrouth,150, 255, cv2.THRESH_BINARY)
+
+        contours, hierarchy = cv2.findContours(thresh1,cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+        hierarchy = hierarchy[0]
+
+        centerx=[]
+        centery=[]
+        for component in zip(contours, hierarchy):
+            currentContour = component[0]
+            currentHierarchy = component[1]
+            print(currentHierarchy)
+            M = cv2.moments(currentContour)
+            cX = M["m10"] / M["m00"]
+            cY = M["m01"] / M["m00"]
+            centerx.append(cX)
+            centery.append(cY)
+        self.centerx=centerx
+        self.centery=centery
+
+
+
+        InsertionArray=[[],[]]
+        FreeWallArray=[[],[]]
+        ## no check for the points that fall in the segment that is to the left or right or on the line
+        for i in range(gtrouth.shape[0]):
+            for j in range(gtrouth.shape[1]):
+                if gtrouth[i][j]==255:
+                    v1 = (insertion1[0][0]-insertion2[0][0], insertion1[0][1]-insertion2[0][1])   # Vector 1
+                    # v2 = (self.x2-275, self.y2-377)   # Vector 2
+                    v2 = (insertion2[0][0]-j, insertion2[0][1]-i)   # Vector 2
+                    
+                    v11 = (insertion1[1][0]-insertion2[1][0], insertion1[1][1]-insertion2[1][1])   # Vector 1
+                    # v2 = (self.x2-275, self.y2-377)   # Vector 2
+                    v22 = (insertion2[1][0]-j, insertion2[1][1]-i)   # Vector 2
+                    xp = v1[0]*v2[1] - v1[1]*v2[0]  # Cross product
+                    xp2 = v11[0]*v22[1] - v11[1]*v22[0]  # Cross product
+
+                    if xp >= 0 and xp2 <= 0:
+                        # print(j,i)
+                        # plt.scatter(j, i, c="yellow",marker='X')
+                        InsertionArray[0].append(j)
+                        InsertionArray[1].append(i)
+
+
+                    else:
+                        # plt.scatter(j, i, c="green",marker='X')
+                        FreeWallArray[0].append(j)
+                        FreeWallArray[1].append(i)
+        
+
+        Area=self.getArea(InsertionArray)
+        Area2=self.getArea(FreeWallArray)
+        for line in self.LinesArrayInsertion[self.indexView]:
+            self.ui.View.removeItem(line)
+        for line in self.LinesArrayFreeWall[self.indexView]:
+            self.ui.View.removeItem(line)
+        self.segsInsertion[self.indexView],end=self.getInsertionSegments(centerx,centery,InsertionArray,Area,self.numInsertion,insertion1,insertion2,"Insertion")
+        self.segsFreeWall[self.indexView],end2=self.getFreeWallSegments(centerx,centery,FreeWallArray,Area2,self.numFreeWall,insertion1,insertion2,"InputVar")
+        self.getMiddleLine(changed=True)
+        np.save('segsFreeWall.npy',self.segsFreeWall[self.indexView],allow_pickle=True)
+        np.save('segsInsertion.npy',self.segsInsertion[self.indexView],allow_pickle=True)
+        np.save('pointslst1.npy', [self.interpointssarr1[self.indexView][0],self.interpointssarr1[self.indexView][1]],allow_pickle=True)
+        np.save('pointslst2.npy', [self.interpointssarr2[self.indexView][0],self.interpointssarr2[self.indexView][1]],allow_pickle=True)
+        self.export_to_jason(self.segsFreeWall,'segsFreeWall')
+        self.export_to_jason(self.segsInsertion,'segsInsertion')
+        print(self.interpointssarr2[self.indexView][0])
+        # self.export_to_jason(self.interpointssarr1,'interpolatedpointsOutter')
+        # self.export_to_jason(self.interpointssarr2,'interpolatedpointsInner')
+
+
+    def getFreeWallSegments(self,centerx,centery,FreeWallArray,Area2,inputsegments2,insertion1,insertion2,InputVar):
+
+        Anglll,Anglll2=self.getStartandEndAngles(centerx,centery, insertion1,insertion2,"FreeWall")
+        radius2=self.largestRadius(FreeWallArray,centerx,centery)
+        self.radius2=radius2
+
+        start=0
+        end=0
+        # step=((360+Anglll2)-Anglll)/(inputsegments)
+        # print(step,"elstep",Anglll2,Anglll)
+        segs  = [ [None]*0 for _ in range(inputsegments2)] 
+        counter=0
+        for mini  in segs:
+            # xx=[ [None]*0 for _ in range(2)]
+            for i in range(4):
+                counter+=1
+                mini.append([])
+        check=True
+
+        for m in range(inputsegments2):
+            startAngle=Anglll
+            endAngle = startAngle+0.0001
+            OutputArr=[[],[]]
+            OutputAng=0
+            Areasmall=0
+            Array=[[],[]]
+            print(check)
+            # calculate the end of each line by the set angle and radius
+            endy = centery[1] + radius2 * mathh.sin(mathh.radians(Anglll))
+            endx = centerx[1]+radius2 * mathh.cos(mathh.radians(Anglll))
+
+            norm = np.linalg.norm
+            p1=np.array([centerx[1],centery[1]])
+            p2=np.array([endx,endy])
+            min=sys.maxsize
+
+            # now check the point with the min distance from the line and set it as the first vertex of the line ( on the wall of inner)
+            for n in range(len(self.interpointssarr2[self.indexView][0])):
+                
+                p3=np.array([self.interpointssarr2[self.indexView][0][n],self.interpointssarr2[self.indexView][1][n]])
+                d = self.DistancePointLine(p3[0],p3[1],p1[0],p1[1],p2[0],p2[1])
+
+                if d < min:
+                    min=d
+                    point1=p3.copy()
+                    firstindex=[self.interpointssarr2[self.indexView][0][n],self.interpointssarr2[self.indexView][1][n]]
+            min=sys.maxsize
+            # now check the point with the min distance from the line and set it as the second vertex of the line ( on the wall of outter)
+            for k in range(len(self.interpointssarr1[self.indexView][0])):
+                
+                p3=np.array([self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]])
+                d = self.DistancePointLine(p3[0],p3[1],p1[0],p1[1],p2[0],p2[1])
+                # print(d)
+                if d < min:
+                    min=d
+                    # print(min)
+                    point2=p3.copy()
+                    secondpoint=[self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]]
+                    # print(point2,"henaaaaaa")
+
+            segs[m][3]=[firstindex,secondpoint]
+            while(Areasmall<=(Area2/inputsegments2) and endAngle>= Anglll  and check==True ):
+            # for j in range(360):
+                # print(endAngle)
+                Array=[[],[]]
+                Areasmall=0
+                # Calculate polar co-ordinates
+                for i in range(len(FreeWallArray[0])):
+                    polarradius = mathh.sqrt((FreeWallArray[0][i] - centerx[1])**2 + ((FreeWallArray[1][i])- centery[1])**2)
+                    Angle =self.calculate_angle((FreeWallArray[1][i] - centery[1]),(FreeWallArray[0][i] - centerx[1]))
+                    # print(Angle)
+                    # Check whether polarradius is less
+                    # then radius of circle or not and
+                    # Angle is between startAngle and
+                    # endAngle or not
+                    if (Angle >= startAngle and Angle <= endAngle and polarradius <= radius2):
+                        Array[0].append(FreeWallArray[0][i])
+                        Array[1].append(FreeWallArray[1][i])
+                    
+                        # print(segs)
+                        # print("Point (", Lolaaa[i][0], ",", Lolaaa[i][1], ") "
+                        #     "exist in the circle sector")
+                    # else:
+                    #     print("Point (", Lolaaa[i][0], ",", Lolaaa[i][1], ") "
+                    #         "does not exist in the circle sector")
+                if len(Array[0]) != 0:
+                    Areasmall=self.getArea(Array)
+                    # print(Areasmall,"Hena")
+                    if Areasmall <= (Area2/inputsegments2):
+
+                        OutputArr[0]=Array[0].copy()
+                        OutputArr[1]=Array[1].copy()
+                        OutputAng=endAngle
+                        start=startAngle
+                        end=endAngle
+
+                    if endAngle >= 360:
+                        startAngle=0
+                        endAngle=0
+                        # start=startAngle
+                        end=endAngle
+                        OutputAng=endAngle
+
+                        check=False
+                        first=True
+
+            
+                endAngle = endAngle+0.5
+            
+            Array[0]=OutputArr[0].copy()
+            Array[1]=OutputArr[1].copy()
+
+            while(Areasmall<= (Area2/inputsegments2) and endAngle<=Anglll2 and check==False):
+            # for j in range(360):
+
+                # Calculate polar co-ordinates
+                for x in range(len(FreeWallArray[0])):
+                    polarradius = mathh.sqrt((FreeWallArray[0][x] - centerx[1])**2 + ((FreeWallArray[1][x])- centery[1])**2)
+                    Angle =self.calculate_angle((FreeWallArray[1][x] - centery[1]),(FreeWallArray[0][x] - centerx[1]))
+                    # print(Angle)
+                    # Check whether polarradius is less
+                    # then radius of circle or not and
+                    # Angle is between startAngle and
+                    # endAngle or not
+                    if (Angle >= startAngle and Angle <= endAngle and polarradius <= radius2):
+                        Array[0].append(FreeWallArray[0][x])
+                        Array[1].append(FreeWallArray[1][x])
+                    
+                        # print(segs)
+                        # print("Point (", Lolaaa[i][0], ",", Lolaaa[i][1], ") "
+                        #     "exist in the circle sector")
+                    # else:
+                    #     print("Point (", Lolaaa[i][0], ",", Lolaaa[i][1], ") "
+                    #         "does not exist in the circle sector")
+                if len(Array[0]) != 0:
+                    Areasmall=self.getArea(Array)
+                    # print(Areasmall,"Hena")
+                    if Areasmall <= (Area2/inputsegments2):
+                        # print(Areasmall,Area2/inputsegments2)
+
+                        OutputArr[0]=Array[0].copy()
+                        OutputArr[1]=Array[1].copy()
+                        OutputAng=endAngle
+                        start=startAngle
+                        end=endAngle
+
+                endAngle = endAngle+0.5
+
+            segs[m][0]=OutputArr[0].copy()
+            segs[m][1]=OutputArr[1].copy()
+            segs[m][2]=self.indexView
+            # segs[m][2]=[start,end]
+            first=False
+            Anglll=OutputAng
+            # startAngle=OutputAng
+        firstp,secondp=self.LastLine(radius2,endAngle,centerx,centery)
+        self.PlotLines(segs,inputsegments2,firstp,secondp,insertion1,insertion2,"FreeWall")
+        return segs,endAngle
+
+    def largestRadius(self,Array,centerx,centery):
+        max=-1
+        for i in range(len(Array[0])):
+            distance=self.calc_distance([Array[0][i],Array[1][i]],[centerx[1],centery[1]])
+
+            if distance>max:
+                max=distance
+                maxi=i  
+        return max+10
+
+    def getStartandEndAngles (self,centerx,centery, insertion1,insertion2,segment):
+
+        start=0
+        end=0
+        if segment=="Insertion":
+            Angle =self.calculate_angle((insertion1[1][1] - centery[1]),(insertion1[1][0] - centerx[1]))
+
+            Angle22 =self.calculate_angle((insertion2[1][1] - centery[1]),(insertion2[1][0] - centerx[1]))
+
+            if Angle<=Angle22:
+                start=Angle
+            else:
+                start=Angle22
+
+            Angle1 =self.calculate_angle((insertion1[0][1] - centery[1]),(insertion1[0][0] - centerx[1]))
+
+            Angle2 =self.calculate_angle((insertion2[0][1] - centery[1]),(insertion2[0][0] - centerx[1]))
+
+            if Angle1>=Angle2:
+                
+                end=Angle1
+            else:
+                end=Angle2
+        else:
+            Angle =self.calculate_angle((insertion1[0][1] - centery[1]),(insertion1[0][0] - centerx[1]))
+
+            Angle22 =self.calculate_angle((insertion2[0][1] - centery[1]),(insertion2[0][0] - centerx[1]))
+
+            if Angle<=Angle22:
+
+                start=Angle
+            else:
+                start=Angle22
+            
+            Angle1 =self.calculate_angle((insertion1[1][1] - centery[1]),(insertion1[1][0] - centerx[1]))
+
+            Angle2 =self.calculate_angle((insertion2[1][1] - centery[1]),(insertion2[1][0] - centerx[1]))
+
+            if Angle1>=Angle2:
+                end=Angle1
+            else:
+                end=Angle2
+        
+        return start,end
+
+    def getInsertionSegments(self,centerx,centery,InsertionArray,Area,inputsegments,insertion1,insertion2,InputVar):
+        radius=self.largestRadius(InsertionArray,centerx,centery)
+        self.radius=radius
+
+        Anglll,Anglll2=self.getStartandEndAngles(centerx,centery, insertion1,insertion2,"Insertion")
+
+        start=0
+        end=0
+        segs  = [ [None]*0 for _ in range(inputsegments)] 
+        counter=0
+        for mini  in segs:
+            # xx=[ [None]*0 for _ in range(2)]
+            for i in range(4):
+                counter+=1
+                # print(counter)
+                mini.append([])
+        # now get the verticies of each line dividing the segments
+
+        for j in range(inputsegments):
+            startAngle=Anglll
+            endAngle = startAngle+0.01
+            OutputArr=[[],[]]
+            OutputAng=0
+            Areasmall=0
+            # calculate the end of each line by the set angle and radius
+            endy = centery[1] + radius * mathh.sin(mathh.radians(Anglll))
+            endx = centerx[1]+radius * mathh.cos(mathh.radians(Anglll))
+
+            norm = np.linalg.norm
+            p1=np.array([centerx[1],centery[1]])
+            p2=np.array([endx,endy])
+            min=sys.maxsize
+
+            # now check the point with the min distance from the line and set it as the first vertex of the line ( on the wall of inner)
+            for m in range(len(self.interpointssarr2[self.indexView][0])):
+                
+                p3=np.array([self.interpointssarr2[self.indexView][0][m],self.interpointssarr2[self.indexView][1][m]])
+                d = self.DistancePointLine(p3[0],p3[1],p1[0],p1[1],p2[0],p2[1])
+
+                if d < min:
+                    min=d
+                    point1=p3.copy()
+                    firstindex=[self.interpointssarr2[self.indexView][0][m],self.interpointssarr2[self.indexView][1][m]]
+            min=sys.maxsize
+            # now check the point with the min distance from the line and set it as the second vertex of the line ( on the wall of outter)
+            for k in range(len(self.interpointssarr1[self.indexView][0])):
+                
+                p3=np.array([self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]])
+                d = self.DistancePointLine(p3[0],p3[1],p1[0],p1[1],p2[0],p2[1])
+                # print(d)
+                if d < min:
+                    min=d
+                    # print(min)
+                    point2=p3.copy()
+                    secondpoint=[self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]]
+                    # print(point2,"henaaaaaa")
+
+            segs[j][3]=[firstindex,secondpoint]
+            while(Areasmall<= (Area/inputsegments) and endAngle<=Anglll2):
+            # for j in range(360):
+                # print(endAngle)
+                Array=[[],[]]
+                Areasmall=0
+                # Calculate polar co-ordinates
+                for i in range(len(InsertionArray[0])):
+                    polarradius = mathh.sqrt((InsertionArray[0][i] - centerx[1])**2 + ((InsertionArray[1][i])- centery[1])**2)
+                    Angle =self.calculate_angle((InsertionArray[1][i] - centery[1]),(InsertionArray[0][i] - centerx[1]))
+                    # print(Angle)
+                    # Check whether polarradius is less
+                    # then radius of circle or not and
+                    # Angle is between startAngle and
+                    # endAngle or not
+                    if (Angle >= startAngle and Angle <= endAngle and polarradius <= radius):
+                        Array[0].append(InsertionArray[0][i])
+                        Array[1].append(InsertionArray[1][i])
+                    
+                        # print(segs)
+                        # print("Point (", Lolaaa[i][0], ",", Lolaaa[i][1], ") "
+                        #     "exist in the circle sector")
+                    # else:
+                    #     print("Point (", Lolaaa[i][0], ",", Lolaaa[i][1], ") "
+                    #         "does not exist in the circle sector")
+                if len(Array[0]) != 0:
+                    Areasmall=self.getArea(Array)
+                    if Areasmall <= (Area/inputsegments):
+
+                        OutputArr[0]=Array[0].copy()
+                        OutputArr[1]=Array[1].copy()
+                        start=startAngle
+                        end=endAngle
+
+                endAngle = endAngle+0.5
+            Anglll=endAngle
+            segs[j][0]=OutputArr[0].copy()
+            segs[j][1]=OutputArr[1].copy()
+            segs[j][2]=self.indexView
+
+        firstp,secondp=self.LastLine(radius,endAngle,centerx,centery)
+        self.PlotLines(segs,inputsegments,firstp,secondp,insertion1,insertion2,"Insertion")
+        return segs,endAngle
+    
+    def LastLine(self,radius,Anglll,centerx,centery):
+        # calculate the end of each line by the set angle and radius
+        endy = centery[1] + radius * mathh.sin(mathh.radians(Anglll))
+        endx = centerx[1]+radius * mathh.cos(mathh.radians(Anglll))
+
+        norm = np.linalg.norm
+        p1=np.array([centerx[1],centery[1]])
+        p2=np.array([endx,endy])
+        min=sys.maxsize
+
+        # now check the point with the min distance from the line and set it as the first vertex of the line ( on the wall of inner)
+        for m in range(len(self.interpointssarr2[self.indexView][0])):
+            
+            p3=np.array([self.interpointssarr2[self.indexView][0][m],self.interpointssarr2[self.indexView][1][m]])
+            d = self.DistancePointLine(p3[0],p3[1],p1[0],p1[1],p2[0],p2[1])
+
+            if d < min:
+                min=d
+                point1=p3.copy()
+                firstindex=[self.interpointssarr2[self.indexView][0][m],self.interpointssarr2[self.indexView][1][m]]
+        min=sys.maxsize
+        # now check the point with the min distance from the line and set it as the second vertex of the line ( on the wall of outter)
+        for k in range(len(self.interpointssarr1[self.indexView][0])):
+            
+            p3=np.array([self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]])
+            d = self.DistancePointLine(p3[0],p3[1],p1[0],p1[1],p2[0],p2[1])
+            # print(d)
+            if d < min:
+                min=d
+                # print(min)
+                point2=p3.copy()
+                secondpoint=[self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]]
+                # print(point2,"henaaaaaa")
+        return firstindex,secondpoint
+        
+    def PlotLines(self,segs,numofsegments,firstp,secondp,insertion1,insertion2,which):
+        
+        self.createlines(numofsegments,which)
+
+        if which=="Insertion":
+            for i in range(len(self.LinesArrayInsertion[self.indexView])):
+                if i==0:
+                    self.LinesArrayInsertion[self.indexView][i] = pg.LineSegmentROI([[insertion1[1][0], insertion1[1][1]], [insertion2[1][0], insertion2[1][1]]], pen="red",movable=False,rotatable=False, resizable=False)
+                else:
+                    self.LinesArrayInsertion[self.indexView][i] = pg.LineSegmentROI([[segs[i][3][0][0], segs[i][3][0][1]], [segs[i][3][1][0], segs[i][3][1][1]]], pen="blue",movable=False,rotatable=True, resizable=True)
+                self.ui.View.addItem( self.LinesArrayInsertion[self.indexView][i] )
+                self.LinesArrayInsertion[self.indexView][i].sigRegionChanged.connect(self.whichline)
+                self.LinesArrayInsertion[self.indexView][i].sigRegionChangeFinished.connect(self.finished)
+            # self.LinesArrayInsertion[self.indexView].append(pg.LineSegmentROI([[insertion1[0][0], insertion1[0][1]], [insertion2[0][0], insertion2[0][1]]], pen="blue",movable=False,rotatable=True, resizable=True))
+            self.LinesArrayInsertion[self.indexView].append(pg.LineSegmentROI([[insertion1[0][0], insertion1[0][1]], [insertion2[0][0], insertion2[0][1]]], pen="red",movable=False,rotatable=False, resizable=False))
+            self.ui.View.addItem( self.LinesArrayInsertion[self.indexView][-1])
+            self.LinesArrayInsertion[self.indexView][-1].sigRegionChanged.connect(self.whichline)
+            self.LinesArrayInsertion[self.indexView][-1].sigRegionChangeFinished.connect(self.finished)
+        else:
+            for i in range(len(self.LinesArrayFreeWall[self.indexView])):
+                if i==0:
+                    self.LinesArrayFreeWall[self.indexView][i] = pg.LineSegmentROI([[insertion2[0][0], insertion2[0][1]], [insertion1[0][0], insertion1[0][1]]], pen="red",movable=False,rotatable=False, resizable=False)
+                    # pass
+                else:
+                    self.LinesArrayFreeWall[self.indexView][i] = pg.LineSegmentROI([[segs[i][3][0][0], segs[i][3][0][1]], [segs[i][3][1][0], segs[i][3][1][1]]], pen="green",movable=False,rotatable=True, resizable=True)
+                self.ui.View.addItem( self.LinesArrayFreeWall[self.indexView][i] )
+                self.LinesArrayFreeWall[self.indexView][i].sigRegionChanged.connect(self.whichline)
+                self.LinesArrayFreeWall[self.indexView][i].sigRegionChangeFinished.connect(self.finished)
+            # self.LinesArrayFreeWall[self.indexView].append(pg.LineSegmentROI([[insertion1[0][0], insertion1[0][1]], [insertion2[0][0], insertion2[0][1]]], pen="blue",movable=False,rotatable=True, resizable=True))
+            self.LinesArrayFreeWall[self.indexView].append(pg.LineSegmentROI([[insertion2[1][0], insertion2[1][1]], [insertion1[1][0], insertion1[1][1]]], pen="red",movable=False,rotatable=False, resizable=False))
+            self.ui.View.addItem( self.LinesArrayFreeWall[self.indexView][-1])
+            self.LinesArrayFreeWall[self.indexView][-1].sigRegionChanged.connect(self.whichline)
+            self.LinesArrayFreeWall[self.indexView][-1].sigRegionChangeFinished.connect(self.finished)
+
+
+
+    def maskCreator(self,Array):
+        mask = np.zeros((self.ArrayDicom.shape[1], self.ArrayDicom.shape[0]),dtype="uint8")
+        for i in range(len(Array[0])):
+            mask[Array[1][i],Array[0][i]]=255
+        return mask
+
+    def getArea(self,Array):
+        mask=self.maskCreator(Array)
+        ret,thresh1 = cv2.threshold(mask,150, 255, cv2.THRESH_BINARY)
+        # thresh1=255-thresh1
+        # Filter using contour hierarchy
+        contours, hierarchy = cv2.findContours(thresh1,cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        cnt = contours[0]
+        Area = cv2.contourArea(cnt)
+        area2 = cv2.countNonZero(thresh1)
+
+        return area2
+
+    def export_to_jason(self,list,listname):
+        jsonString = json.dumps(list)
+        jsonFile = open(listname, "w")
+        jsonFile.write(jsonString)
+        jsonFile.close()
+
+    def getnearest(self,pointslst,insertion):
+        min1=sys.maxsize
+        min2=sys.maxsize
+
+        minind1=0
+        minind2=0
+        for i in range(len(pointslst[0])):
+            d1=self.calc_distance([pointslst[0][i],pointslst[1][i]],[insertion[0][0],insertion[0][1]])
+            d2=self.calc_distance([pointslst[0][i],pointslst[1][i]],[insertion[1][0],insertion[1][1]])
+
+            if d1<min1:
+                min1=d1
+                minind1=i
+            if d2<min2:
+                min2=d2
+                minind2=i
+
+        insertion[0][0]=pointslst[0][minind1]
+        insertion[0][1]=pointslst[1][minind1]
+
+        insertion[1][0]=pointslst[0][minind2]
+        insertion[1][1]=pointslst[1][minind2]
+
+    def InterpolateMiddleLine(self,Array,seg):
+
+        datafake=np.column_stack([Array[self.indexView][0], Array[self.indexView][1]])
+
+        adj=[]
+        if(len(Array[self.indexView][0])-1>1):
+            x=[0]
+            # calculate the distance between each corresponding points 
+            for j in range(0,len(Array[self.indexView][0])-1):
+                
+                distance=self.calc_distance(datafake[j],datafake[j+1])
+                x.append(x[j]+distance)
+
+            DistanceArray=x.copy()
+            spacing=0.12
+
+            x=np.asarray(x)
+
+            # get a range of points between the min and max distance with constant spacing
+            range_of_points =  np.arange(0, max(x),0.15)
+
+
+            x=np.asarray(x)
+
+            # use cubic spline to calculate new interpolated x points
+            cs_x = CubicSpline(x, Array[self.indexView][0])
+            x_after_interpolate=cs_x(range_of_points)
+            
+            # use cubic spline to calculate new interpolated y points
+            cs_y = CubicSpline(x, Array[self.indexView][1])
+            y_after_interpolate=cs_y(range_of_points)
+
+            # make the data array the new x,y interpolated points to be used in drawing
+            data=np.column_stack([x_after_interpolate,y_after_interpolate])            
+        x  = [ [None]*0 for _ in range(len(x_after_interpolate))]
+        for i in range(len(x)-1):
+            x[i]=[i,i+1]
+        x[len(x)-1]=[len(x)-1,len(x)-1]
+        adj=x
+        adj=np.asarray(adj)
+        if seg==1:
+            self.ui.View.removeItem(self.MiddlePointsInsertion)
+            self.MiddlePointsInsertion.setData(pos=data,adj=adj,pen="green",symbol='o',size=0.1, pxMode=True,symbolPen="white",symbolBrush="white")
+            self.ui.View.addItem(self.MiddlePointsInsertion)
+        else:
+            self.ui.View.removeItem(self.MiddlePointsFreeWall)
+            self.MiddlePointsFreeWall.setData(pos=data,adj=adj,pen="white",symbol='o',size=0.1, pxMode=True,symbolPen="white",symbolBrush="white")
+            self.ui.View.addItem(self.MiddlePointsFreeWall)
+        
+    
+    def getMiddleLine(self,changed):
+        xarr=[]
+        yarr=[]
+        # if len(self.MiddleInsertion[self.indexView][0]) !=0 and changed==False:
+
+        if len(self.MiddleInsertion[self.indexView][0])!=0 and changed ==False:
+            self.InterpolateMiddleLine(self.MiddleInsertion,1)
+            self.InterpolateMiddleLine(self.MiddleFreeWall,2)
+
+        else:
+            self.MiddleInsertion[self.indexView][0]=[]
+            self.MiddleInsertion[self.indexView][1]=[]
+            self.MiddleFreeWall[self.indexView][0]=[]
+            self.MiddleFreeWall[self.indexView][1]=[]
+
+
+            # AngleS2,AngleE2=self.getStartandEndAngles(self.centerx,self.centery, self.InsertionPoints1,self.InsertionPoints2,"FreeWall")
+            if len(self.LinesArrayInsertion[self.indexView]) !=0 and len(self.LinesArrayFreeWall[self.indexView])!=0:
+                Angle =self.calculate_angle((self.InsertionPoints1[self.indexView][1][1] - self.centery[1]),(self.InsertionPoints1[self.indexView][1][0] - self.centerx[1]))
+
+                Angle22 =self.calculate_angle((self.InsertionPoints2[self.indexView][1][1] - self.centery[1]),(self.InsertionPoints2[self.indexView][1][0] - self.centerx[1]))
+
+                if Angle>=Angle22:
+                    start=Angle
+                else:
+                    start=Angle22
+
+                Angle1 =self.calculate_angle((self.InsertionPoints1[self.indexView][0][1] - self.centery[1]),(self.InsertionPoints1[self.indexView][0][0] - self.centerx[1]))
+
+                Angle2 =self.calculate_angle((self.InsertionPoints2[self.indexView][0][1] - self.centery[1]),(self.InsertionPoints2[self.indexView][0][0] - self.centerx[1]))
+
+                if Angle1<=Angle2:
+                    
+                    end=Angle1
+                else:
+                    end=Angle2
+
+                angle=0
+                for i in range(360):
+                    angle=i
+                    if(angle>=start and angle<=end):
+                        # calculate the end of each line by the set angle and radius
+                        endy = self.centery[1] + self.radius * mathh.sin(mathh.radians(angle))
+                        endx = self.centerx[1]+self.radius * mathh.cos(mathh.radians(angle))
+
+                        norm = np.linalg.norm
+                        p1=np.array([self.centerx[1],self.centery[1]])
+                        p2=np.array([endx,endy])
+                        min=sys.maxsize
+
+                        # now check the point with the min distance from the line and set it as the first vertex of the line ( on the wall of inner)
+                        for n in range(len(self.interpointssarr2[self.indexView][0])):
+                            
+                            p3=np.array([self.interpointssarr2[self.indexView][0][n],self.interpointssarr2[self.indexView][1][n]])
+                            d = self.DistancePointLine(p3[0],p3[1],p1[0],p1[1],p2[0],p2[1])
+
+                            if d < min:
+                                min=d
+                                point1=p3.copy()
+                                firstindex=[self.interpointssarr2[self.indexView][0][n],self.interpointssarr2[self.indexView][1][n]]
+
+
+                        min=sys.maxsize
+                        # now check the point with the min distance from the line and set it as the second vertex of the line ( on the wall of outter)
+                        for k in range(len(self.interpointssarr1[self.indexView][0])):
+                            
+                            p3=np.array([self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]])
+                            d = self.DistancePointLine(p3[0],p3[1],p1[0],p1[1],p2[0],p2[1])
+                            # print(d)
+                            if d < min:
+                                min=d
+                                # print(min)
+                                point2=p3.copy()
+                                secondpoint=[self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]]
+                                # print(point2,"henaaaaaa")
+                        self.MiddleInsertion[self.indexView][0].append(((secondpoint[0]+firstindex[0])/2))
+                        self.MiddleInsertion[self.indexView][1].append(((secondpoint[1]+firstindex[1])/2))
+                # for i in range(len(self.LinesArrayInsertion[self.indexView])):
+                x1=self.LinesArrayInsertion[self.indexView][0].listPoints()[0][0]
+                y1=self.LinesArrayInsertion[self.indexView][0].listPoints()[0][1]
+                x2=self.LinesArrayInsertion[self.indexView][0].listPoints()[1][0]
+                y2=self.LinesArrayInsertion[self.indexView][0].listPoints()[1][1]
+
+
+                #     self.MiddleInsertion[self.indexView][0].append(((x1+x2)/2))
+                #     self.MiddleInsertion[self.indexView][1].append(((y1+y2)/2))
+                # xarr.append(xarr[0])
+                # yarr.append(yarr[0])
+                self.MiddleInsertion[self.indexView][0].insert(0, ((x1+x2)/2))
+                self.MiddleInsertion[self.indexView][1].insert(0, ((y1+y2)/2))
+                
+                x1=self.LinesArrayInsertion[self.indexView][-1].listPoints()[0][0]
+                y1=self.LinesArrayInsertion[self.indexView][-1].listPoints()[0][1]
+                x2=self.LinesArrayInsertion[self.indexView][-1].listPoints()[1][0]
+                y2=self.LinesArrayInsertion[self.indexView][-1].listPoints()[1][1]
+                self.MiddleInsertion[self.indexView][0].append(((x1+x2)/2))
+                self.MiddleInsertion[self.indexView][1].append(((y1+y2)/2))
+                
+                self.InterpolateMiddleLine(self.MiddleInsertion,1)
+                
+                
+                Angle =self.calculate_angle((self.InsertionPoints1[self.indexView][1][1] - self.centery[1]),(self.InsertionPoints1[self.indexView][1][0] - self.centerx[1]))
+
+                Angle22 =self.calculate_angle((self.InsertionPoints2[self.indexView][1][1] - self.centery[1]),(self.InsertionPoints2[self.indexView][1][0] - self.centerx[1]))
+
+                if Angle<=Angle22:
+                    start=Angle
+                else:
+                    start=Angle22
+
+                Angle1 =self.calculate_angle((self.InsertionPoints1[self.indexView][0][1] - self.centery[1]),(self.InsertionPoints1[self.indexView][0][0] - self.centerx[1]))
+
+                Angle2 =self.calculate_angle((self.InsertionPoints2[self.indexView][0][1] - self.centery[1]),(self.InsertionPoints2[self.indexView][0][0] - self.centerx[1]))
+
+                if Angle1>=Angle2:
+                    
+                    end=Angle1
+                else:
+                    end=Angle2
+
+                angle=0
+            
+                for i in range(360):
+                    angle=i
+                    if(angle>=end):
+                        # calculate the end of each line by the set angle and radius
+                        endy = self.centery[1] + self.radius2 * mathh.sin(mathh.radians(angle))
+                        endx = self.centerx[1]+self.radius2 * mathh.cos(mathh.radians(angle))
+
+                        norm = np.linalg.norm
+                        p1=np.array([self.centerx[1],self.centery[1]])
+                        p2=np.array([endx,endy])
+                        min=sys.maxsize
+
+                        # now check the point with the min distance from the line and set it as the first vertex of the line ( on the wall of inner)
+                        for n in range(len(self.interpointssarr2[self.indexView][0])):
+                            
+                            p3=np.array([self.interpointssarr2[self.indexView][0][n],self.interpointssarr2[self.indexView][1][n]])
+                            d = self.DistancePointLine(p3[0],p3[1],p1[0],p1[1],p2[0],p2[1])
+
+                            if d < min:
+                                min=d
+                                point1=p3.copy()
+                                firstindex=[self.interpointssarr2[self.indexView][0][n],self.interpointssarr2[self.indexView][1][n]]
+
+
+                        min=sys.maxsize
+                        # now check the point with the min distance from the line and set it as the second vertex of the line ( on the wall of outter)
+                        for k in range(len(self.interpointssarr1[self.indexView][0])):
+                            
+                            p3=np.array([self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]])
+                            d = self.DistancePointLine(p3[0],p3[1],p1[0],p1[1],p2[0],p2[1])
+                            # print(d)
+                            if d < min:
+                                min=d
+                                # print(min)
+                                point2=p3.copy()
+                                secondpoint=[self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]]
+                                # print(point2,"henaaaaaa")
+                        self.MiddleFreeWall[self.indexView][0].append(((secondpoint[0]+firstindex[0])/2))
+                        self.MiddleFreeWall[self.indexView][1].append(((secondpoint[1]+firstindex[1])/2))
+                
+                
+                Angle =self.calculate_angle((self.InsertionPoints1[self.indexView][1][1] - self.centery[1]),(self.InsertionPoints1[self.indexView][1][0] - self.centerx[1]))
+
+                Angle22 =self.calculate_angle((self.InsertionPoints2[self.indexView][1][1] - self.centery[1]),(self.InsertionPoints2[self.indexView][1][0] - self.centerx[1]))
+
+                if Angle<=Angle22:
+                    start=Angle
+                else:
+                    start=Angle22
+
+                Angle1 =self.calculate_angle((self.InsertionPoints1[self.indexView][0][1] - self.centery[1]),(self.InsertionPoints1[self.indexView][0][0] - self.centerx[1]))
+
+                Angle2 =self.calculate_angle((self.InsertionPoints2[self.indexView][0][1] - self.centery[1]),(self.InsertionPoints2[self.indexView][0][0] - self.centerx[1]))
+
+                if Angle1>=Angle2:
+                    
+                    end=Angle1
+                else:
+                    end=Angle2
+
+                angle=0
+                for i in range(360):
+                    angle=i
+                    if(angle<=start):
+                        # calculate the end of each line by the set angle and radius
+                        endy = self.centery[1] + self.radius2 * mathh.sin(mathh.radians(angle))
+                        endx = self.centerx[1]+self.radius2 * mathh.cos(mathh.radians(angle))
+
+                        norm = np.linalg.norm
+                        p1=np.array([self.centerx[1],self.centery[1]])
+                        p2=np.array([endx,endy])
+                        min=sys.maxsize
+
+                        # now check the point with the min distance from the line and set it as the first vertex of the line ( on the wall of inner)
+                        for n in range(len(self.interpointssarr2[self.indexView][0])):
+                            
+                            p3=np.array([self.interpointssarr2[self.indexView][0][n],self.interpointssarr2[self.indexView][1][n]])
+                            d = self.DistancePointLine(p3[0],p3[1],p1[0],p1[1],p2[0],p2[1])
+
+                            if d < min:
+                                min=d
+                                point1=p3.copy()
+                                firstindex=[self.interpointssarr2[self.indexView][0][n],self.interpointssarr2[self.indexView][1][n]]
+
+
+                        min=sys.maxsize
+                        # now check the point with the min distance from the line and set it as the second vertex of the line ( on the wall of outter)
+                        for k in range(len(self.interpointssarr1[self.indexView][0])):
+                            
+                            p3=np.array([self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]])
+                            d = self.DistancePointLine(p3[0],p3[1],p1[0],p1[1],p2[0],p2[1])
+                            # print(d)
+                            if d < min:
+                                min=d
+                                # print(min)
+                                point2=p3.copy()
+                                secondpoint=[self.interpointssarr1[self.indexView][0][k],self.interpointssarr1[self.indexView][1][k]]
+                                # print(point2,"henaaaaaa")
+                        self.MiddleFreeWall[self.indexView][0].append(((secondpoint[0]+firstindex[0])/2))
+                        self.MiddleFreeWall[self.indexView][1].append(((secondpoint[1]+firstindex[1])/2))
+
+                # for i in range(len(self.LinesArrayInsertion[self.indexView])):
+                x1=self.LinesArrayFreeWall[self.indexView][0].listPoints()[0][0]
+                y1=self.LinesArrayFreeWall[self.indexView][0].listPoints()[0][1]
+                x2=self.LinesArrayFreeWall[self.indexView][0].listPoints()[1][0]
+                y2=self.LinesArrayFreeWall[self.indexView][0].listPoints()[1][1]
+
+
+                #     self.MiddleInsertion[self.indexView][0].append(((x1+x2)/2))
+                #     self.MiddleInsertion[self.indexView][1].append(((y1+y2)/2))
+                # xarr.append(xarr[0])
+                # yarr.append(yarr[0])
+                self.MiddleFreeWall[self.indexView][0].insert(0, ((x1+x2)/2))
+                self.MiddleFreeWall[self.indexView][1].insert(0, ((y1+y2)/2))
+                
+                x1=self.LinesArrayFreeWall[self.indexView][-1].listPoints()[0][0]
+                y1=self.LinesArrayFreeWall[self.indexView][-1].listPoints()[0][1]
+                x2=self.LinesArrayFreeWall[self.indexView][-1].listPoints()[1][0]
+                y2=self.LinesArrayFreeWall[self.indexView][-1].listPoints()[1][1]
+                self.MiddleFreeWall[self.indexView][0].append(((x1+x2)/2))
+                self.MiddleFreeWall[self.indexView][1].append(((y1+y2)/2))
+
+                self.InterpolateMiddleLine(self.MiddleFreeWall,2)
+
+
+    def insertion(self):
+        self.insertionVar=True
+        self.InsertionPoints=[]
+
+        self.ui.ToolBarLabel.setText("Please Select Insertion Point 1")
     
     def finished(self,obj):
-        print("hiiiiiiii")
+        return
+        # print("hiiiiiiii")
 
     ## which line function
     def whichline(self,obj):
@@ -299,13 +1236,26 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         """
         ## first check which line the user is chaning 
         objindex=0
+        which=""
         for i in range(len(self.lines)):
             if obj==self.lines[i]:
                 objindex=i
+                which="Regular"
+                lines=self.lines
+
+        for i in range(len(self.LinesArrayInsertion[self.indexView])):
+            if obj==self.LinesArrayInsertion[self.indexView][i]:
+                objindex=i
+                which="Insertion"
+                lines=self.LinesArrayInsertion[self.indexView]
+        
+        for i in range(len(self.LinesArrayFreeWall[self.indexView])):
+            if obj==self.LinesArrayFreeWall[self.indexView][i]:
+                objindex=i
+                which="FreeWall"
+                lines=self.LinesArrayFreeWall[self.indexView]
         
 
-        print(objindex)
-        
         # saving the old x,y values of both handles of the line
         tempx1=self.x1
         tempy1=self.y1
@@ -325,10 +1275,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # determine which handles
         if tempx1!= self.x1 or tempy1!=self.y1:
             first=True
-            print("First")
+            # print("First")
         elif tempx2!= self.x2 or tempy2!=self.y2:
             second=True
-            print("Second")
+            # print("Second")
         
         ## now we want to move the handle along the border of the inner or outter 
         ## to do that we check for the x,y of the handle moved then we calc the distance to the nearest point on the border
@@ -336,85 +1286,113 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         ## this will make an effect of moving along the border
         min=sys.maxsize
         if first==True:
-            for i in range(len(self.interpointssarr2[self.indexView][0])):
-                d=self.calc_distance([self.x1, self.y1],[self.interpointssarr2[self.indexView][0][i],self.interpointssarr2[self.indexView][1][i]])
-                if d<min:
-                    min=d
-                    index=i
-            ## move the point to the nearest point on the border
-            obj.movePoint(0,[self.interpointssarr2[self.indexView][0][index],self.interpointssarr2[self.indexView][1][index]])
+            if objindex==0 or objindex==len(lines)-1:
+                obj.movePoint(0,[tempx1,tempy1])
+                
+            else:
+                for i in range(len(self.interpointssarr2[self.indexView][0])):
+                    d=self.calc_distance([self.x1, self.y1],[self.interpointssarr2[self.indexView][0][i],self.interpointssarr2[self.indexView][1][i]])
+                    if d<min:
+                        min=d
+                        index=i
+                ## move the point to the nearest point on the border
+                obj.movePoint(0,[self.interpointssarr2[self.indexView][0][index],self.interpointssarr2[self.indexView][1][index]])
         min=sys.maxsize
         ## do the same for the seconf handle if it is the one moving
         if second==True:
-            for j in range(len(self.interpointssarr1[self.indexView][0])):
-                d=self.calc_distance([self.x2, self.y2],[self.interpointssarr1[self.indexView][0][j],self.interpointssarr1[self.indexView][1][j]])
-                if d<min:
-                    min=d
-                    index=j
-            obj.movePoint(1,[self.interpointssarr1[self.indexView][0][index],self.interpointssarr1[self.indexView][1][index]])
-
-
-        ## now we have the index of the line we could get the index before and index after
-        indexafter=objindex+1
-        indexbefore=objindex-1
-        if objindex==0:
-            indexbefore=len(self.lines)-1
-        if objindex==len(self.lines)-1:
-            indexafter=0
-        
-        print(indexbefore)
-        print(indexafter)
-
-        ## create a list with the same shape as that of the segments to store the new values
-        twosegs  = [ [None]*0 for _ in range(12)] 
-        for mini  in twosegs:
-            # xx=[ [None]*0 for _ in range(2)]
-            for i in range(2):
-                # print(counter)
-                mini.append([])
- 
-        ## do the same for the index before handles
-        # x1=self.lines[indexbefore].listPoints()[0][0]
-        # y1=self.lines[indexbefore].listPoints()[0][1]
-        # x2=self.lines[indexbefore].listPoints()[1][0]
-        # y2=self.lines[indexbefore].listPoints()[1][1]
-
-        ## now we obtain the values of the segments of that before the line and after the line
-        
-        data1=np.column_stack([self.segs[objindex][0], self.segs[objindex][1]])
-        print(len(self.segs[objindex][0]),len(self.segs[objindex][1]))
-        data2=np.column_stack([self.segs[indexbefore][0], self.segs[indexbefore][1]])
-        print(len(self.segs[indexbefore][0]),len(self.segs[indexbefore][1]))
-
-        datan=np.vstack((data2,data1))
-
-        ## no check for the points that fall in the segment that is to the left or right or on the line
-        for i in range(len(datan)):
-            v1 = (self.x2-self.x1, self.y2-self.y1)   # Vector 1
-            # v2 = (self.x2-275, self.y2-377)   # Vector 2
-            v2 = (self.x2-datan[i][0], self.y2-datan[i][1])   # Vector 2
-
-            xp = v1[0]*v2[1] - v1[1]*v2[0]  # Cross product
-            if xp > 0:
-                print('shemalha')
-                twosegs[indexbefore][0].append(datan[i][0])
-                twosegs[indexbefore][1].append(datan[i][1])            
-            elif xp < 0:
-                print('yemenha')
-                twosegs[objindex][0].append(datan[i][0])
-                twosegs[objindex][1].append(datan[i][1])
+            if objindex==0 or objindex==len(lines)-1:
+                obj.movePoint(0,[tempx2,tempy2])
+                return 
             else:
-                print('on the same line!')
-                twosegs[objindex][0].append(datan[i][0])
-                twosegs[objindex][1].append(datan[i][1])
+                for j in range(len(self.interpointssarr1[self.indexView][0])):
+                    d=self.calc_distance([self.x2, self.y2],[self.interpointssarr1[self.indexView][0][j],self.interpointssarr1[self.indexView][1][j]])
+                    if d<min:
+                        min=d
+                        index=j
+                obj.movePoint(1,[self.interpointssarr1[self.indexView][0][index],self.interpointssarr1[self.indexView][1][index]])
+
+        if objindex !=0 and objindex!=len(lines)-1:
+
+            ## now we have the index of the line we could get the index before and index after
+            indexafter=objindex+1
+            indexbefore=objindex-1
+            if objindex==0:
+                indexbefore=len(lines)-1
+                print("hena fe de")
+            if objindex==len(lines)-1:
+                indexafter=0
+                print("hena fe tanya")
+
             
-        # save the new points
-        if first ==True or second==True:
-            self.segs[indexbefore]=twosegs[indexbefore].copy()
-            self.segs[objindex]=twosegs[objindex].copy()
-            np.save('segs.npy',self.segs,allow_pickle=True)
-            # print(obj.getLocalHandlePositions())
-            # print(obj.getLocalHandlePositions()[0][1][1])
+            # print(indexbefore)
+            # print(indexafter)
+
+            ## create a list with the same shape as that of the segments to store the new values
+            if which=="Insertion":
+                numseg=self.numInsertion
+                segs=self.segsInsertion[self.indexView]
+
+            elif which=="FreeWall":
+                numseg=self.numFreeWall
+                segs=self.segsFreeWall[self.indexView]
+
+            else:
+                numseg=12
+                segs=self.segs
+
+
+            twosegs  = [ [None]*0 for _ in range(numseg)] 
+            for mini  in twosegs:
+                # xx=[ [None]*0 for _ in range(2)]
+                for i in range(2):
+                    # print(counter)
+                    mini.append([])
+    
+            ## do the same for the index before handles
+            # x1=self.lines[indexbefore].listPoints()[0][0]
+            # y1=self.lines[indexbefore].listPoints()[0][1]
+            # x2=self.lines[indexbefore].listPoints()[1][0]
+            # y2=self.lines[indexbefore].listPoints()[1][1]
+
+            ## now we obtain the values of the segments of that before the line and after the line
+            
+            data1=np.column_stack([segs[objindex][0], segs[objindex][1]])
+            # print(len(self.segs[objindex][0]),len(self.segs[objindex][1]))
+            data2=np.column_stack([segs[indexbefore][0], segs[indexbefore][1]])
+            # print(len(self.segs[indexbefore][0]),len(self.segs[indexbefore][1]))
+
+            datan=np.vstack((data2,data1))
+
+            ## no check for the points that fall in the segment that is to the left or right or on the line
+            for i in range(len(datan)):
+                v1 = (self.x2-self.x1, self.y2-self.y1)   # Vector 1
+                # v2 = (self.x2-275, self.y2-377)   # Vector 2
+                v2 = (self.x2-datan[i][0], self.y2-datan[i][1])   # Vector 2
+
+                xp = v1[0]*v2[1] - v1[1]*v2[0]  # Cross product
+                if xp > 0:
+                    # print('shemalha')
+                    twosegs[indexbefore][0].append(datan[i][0])
+                    twosegs[indexbefore][1].append(datan[i][1])            
+                elif xp < 0:
+                    # print('yemenha')
+                    twosegs[objindex][0].append(datan[i][0])
+                    twosegs[objindex][1].append(datan[i][1])
+                else:
+                    # print('on the same line!')
+                    twosegs[objindex][0].append(datan[i][0])
+                    twosegs[objindex][1].append(datan[i][1])
+                
+            # save the new points
+            if first ==True or second==True:
+                segs[indexbefore]=twosegs[indexbefore].copy()
+                segs[objindex]=twosegs[objindex].copy()
+                np.save('segsFreeWall.npy',self.segsFreeWall[self.indexView],allow_pickle=True)
+                np.save('segsInsertion.npy',self.segsInsertion[self.indexView],allow_pickle=True)
+
+                # print(obj.getLocalHandlePositions())
+                # print(obj.getLocalHandlePositions()[0][1][1])
+
 
     def drawregions(self):
 
@@ -431,13 +1409,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             xx=self.interpointssarr1[self.indexView][0]
             yy=self.interpointssarr1[self.indexView][1]
             # create the mask
-            self.masko = np.zeros([512, 512], dtype="uint8")
+            self.masko = np.zeros([self.ArrayDicom.shape[1], self.ArrayDicom.shape[0]], dtype="uint8")
             data1=np.column_stack([xx, yy])
             # fill the mask using the contour
             cv2.fillPoly(self.masko, np.int32([data1]), 1)
             # center1=(sum(self.x_after_interpolate) / len(self.x_after_interpolate), sum(self.y_after_interpolate) / len(self.x_after_interpolate))
             # print("Center Outter:",center1)
             np.save('pointslst1.npy', [xx,yy],allow_pickle=True)
+            np.save('pointslst1original',self.pointslst1,allow_pickle=True)
 
 
 
@@ -448,13 +1427,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             xx=self.interpointssarr2[self.indexView][0]
             yy=self.interpointssarr2[self.indexView][1]
             # create the mask
-            self.maski = np.zeros([512, 512], dtype="uint8")
+            self.maski = np.zeros([self.ArrayDicom.shape[1], self.ArrayDicom.shape[0]], dtype="uint8")
             data2=np.column_stack([xx, yy])
             # fill the mask using the contour
             cv2.fillPoly(self.maski, np.int32([data2]), 1)
             # center2=(sum(self.interpointssarr2[self.indexView][0][i]) / len(self.x_after_interpolate), sum(self.y_after_interpolate) / len(self.x_after_interpolate))
             # print("Center Inner:",center2)
             np.save('pointslst2.npy', [xx,yy],allow_pickle=True)
+            np.save('pointslst2original',self.pointslst2,allow_pickle=True)
+
 
         # if the indicies of the outter and the inner are both greater than 2 then generate the groound truth mask of the wall that is the difference between them
         if len(indecies2) > 2 and len(indecies1) > 2 :
@@ -625,11 +1606,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         This Function is called to toggle drawEdit var (free hand draw)
         """
         if self.drawEditvar == True:
-            print(self.drawEditvar)
+            # print(self.drawEditvar)
 
             self.drawEditvar=False
         else:
-            print(self.drawEditvar)
+            # print(self.drawEditvar)
 
             self.drawEditvar=True
 
@@ -668,7 +1649,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
             self.DrawPoints()
 
-            print("etafet1")
+            # print("etafet1")
         # else we stop draging of the inner points and set the variabel to those of the outter part
         else:
             self.outter=True
@@ -679,7 +1660,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.pointsTrue=self.pointsTrue1
             self.x_after_interpolate=self.x_after_interpolate1
             self.y_after_interpolate=self.y_after_interpolate1
-
+            self.InsertionPoints=self.InsertionPoints1[self.indexView]
             self.firstime=self.firstime1
             self.pointslst=self.pointslst1
             self.ui.actioninner.setChecked(False)
@@ -702,13 +1683,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         if self.inner == True:
             # self.pointsTrue1.DragStop=True
             self.inner=False
+
             if self.inner ==False and self.outter==False:
                 self.pointsTrue1.DragStop=True
                 self.pointsTrue2.DragStop=True
 
             self.DrawPoints()
 
-            print("etafet2")
+            # print("etafet2")
         # else we stop draging of the inner points and set the variabel to those of the inner part
         else:
             self.inner=True
@@ -721,7 +1703,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.pointslst=self.pointslst2
             self.x_after_interpolate=self.x_after_interpolate2
             self.y_after_interpolate=self.y_after_interpolate2
-
+            self.InsertionPoints=self.InsertionPoints2[self.indexView]
             self.ui.actionouter.setChecked(False)
             self.outter=False
             self.collor=2
@@ -745,14 +1727,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         angle = np.exp(1j * 2 * np.pi / M)
         angles = np.cumprod(np.ones(M + 1) * angle)
         ## making the x and y array
-        x, y = np.real(80*angles), np.imag(40*angles)
+        x, y = np.real(40*angles), np.imag(20*angles)
 
         ## calculating the center of the elipse from the points 
         center=self.CalculateCenter(x,y)
         ## shift the center from the origin to the clicked point
         differenceX=ClickedX-center[0]
         differenceY=ClickedY-center[1]
-        print(center)
+        # print(center)
         ## shiffting all the points from the center origin to the new xy of the clicked origin
         x=x+differenceX
         y=y+differenceY
@@ -771,7 +1753,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.firstime[self.indexView]+=1
 
 
-        print(len(self.pointslst[0]),len(self.pointslst[1]),len(self.pointslst[2]))
+        # print(len(self.pointslst[0]),len(self.pointslst[1]),len(self.pointslst[2]))
         # calling the draw function
         self.DrawPoints()
 
@@ -787,14 +1769,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         angles = np.cumprod(np.ones(M + 1) * angle)
 
         ## making the x and y array
-        x, y = np.real(50*angles), np.imag(50*angles)
+        x, y = np.real(25*angles), np.imag(25*angles)
 
         ## calculating the center of the elipse from the points 
         center=self.CalculateCenter(x,y)
         ## shift the center from the origin to the clicked point
         differenceX=ClickedX-center[0]
         differenceY=ClickedY-center[1]
-        print(center)
+        # print(center)
         ## shiffting all the points from the center origin to the new xy of the clicked origin
         x=x+differenceX
         y=y+differenceY
@@ -811,7 +1793,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.pointslst[1].append(y[i])
             self.firstime[self.indexView]+=1
 
-        print(len(self.pointslst[0]),len(self.pointslst[1]),len(self.pointslst[2]))
+        # print(len(self.pointslst[0]),len(self.pointslst[1]),len(self.pointslst[2]))
         # calling the draw function
         self.DrawPoints()
 
@@ -917,6 +1899,24 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             # xx=[ [None]*0 for _ in range(2)]
             for i in range(2):
                 mini.append([])
+        self.MiddleInsertion=[ [None]*0 for _ in range(self.ArrayDicom.shape[2])]
+        self.MiddleFreeWall=[ [None]*0 for _ in range(self.ArrayDicom.shape[2])]
+        self.segsInsertion=[ [None]*0 for _ in range(self.ArrayDicom.shape[2])]
+        self.segsFreeWall=[ [None]*0 for _ in range(self.ArrayDicom.shape[2])]
+        self.segsInsertion=[ [None]*0 for _ in range(self.ArrayDicom.shape[2])]
+        self.InsertionPoints1=[ [None]*0 for _ in range(self.ArrayDicom.shape[2])]
+        self.InsertionPoints2=[ [None]*0 for _ in range(self.ArrayDicom.shape[2])]
+
+        for mini  in  self.MiddleInsertion:
+            # xx=[ [None]*0 for _ in range(2)]
+            for i in range(2):
+                mini.append([])
+        for mini  in  self.MiddleFreeWall:
+            # xx=[ [None]*0 for _ in range(2)]
+            for i in range(2):
+                mini.append([])
+        self.LinesArrayInsertion=[ [None]*0 for _ in range(self.ArrayDicom.shape[2])]
+        self.LinesArrayFreeWall=[ [None]*0 for _ in range(self.ArrayDicom.shape[2])]
 
     # Set Image Data Function that takes the meta data and construct the 3d numpy array
     def SetImagedata(self, ArrayDicom,slices,idx):
@@ -1026,9 +2026,27 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         # First Event is that the user action is a mouse scroll and also the zoomvar and scale var is False
         # So the action now is to scroll through the slices
+
+
+
         if (watched == self.ui.View.viewport() and 
             event.type() == QtCore.QEvent.Wheel and self.zoomVar==False and self.scaleVar==False and self.scaleXVar==False and self.scaleYVar==False):
-            
+            for i in range(len(self.LinesArrayInsertion)):
+                if (len(self.LinesArrayInsertion[i])==0):
+                    pass
+                else:
+                    for line in self.LinesArrayInsertion[i]:
+                        self.ui.View.removeItem(line)
+
+            for i in range(len(self.LinesArrayFreeWall)):
+                if (len(self.LinesArrayFreeWall[i])==0):
+                    pass
+                else:
+                    for line in self.LinesArrayFreeWall[i]:
+                        self.ui.View.removeItem(line)
+
+            self.ui.View.removeItem(self.MiddlePointsInsertion)
+            self.ui.View.removeItem(self.MiddlePointsFreeWall)
             # Check is the scroll is forward + (positive direction)
             if event.angleDelta().y() > 0:
 
@@ -1061,7 +2079,26 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             # self.DrawPoints()
             # if self.outter==True:
             self.DrawPoints(pointslst=self.pointslst2,points=self.points2,pointsTrue=self.pointsTrue2,collor=2)
+            self.x_after_interpolate2=self.x_after_interpolate.copy()
+            self.y_after_interpolate2=self.y_after_interpolate.copy()
+
             self.DrawPoints(pointslst=self.pointslst1,points=self.points1,pointsTrue=self.pointsTrue1,collor=1)
+            self.x_after_interpolate1=self.x_after_interpolate.copy()
+            self.y_after_interpolate1=self.y_after_interpolate.copy()
+            
+            self.interpointssarr2[self.indexView][0]=self.x_after_interpolate2
+            self.interpointssarr2[self.indexView][1]=self.y_after_interpolate2
+            self.interpointssarr1[self.indexView][0]=self.x_after_interpolate1
+            self.interpointssarr1[self.indexView][1]=self.y_after_interpolate1
+
+            self.getMiddleLine(changed=False)
+            self.interpointssarr1
+            for line in self.LinesArrayInsertion[self.indexView]:
+                self.ui.View.addItem(line)
+
+
+            for line in self.LinesArrayFreeWall[self.indexView]:
+                self.ui.View.addItem(line)
 
             self.drawEditvar=False
 
@@ -1219,8 +2256,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.firstime[self.indexView]-=1
 
             indecies=[i for i,val in enumerate(self.pointslst[2]) if val==self.indexView]
-            print(indecies)
-            print(self.pointslst,"After")
+            # print(indecies)
+            # print(self.pointslst,"After")
 
             self.pointsTrue.indexArr=self.indexView
             # drawing the points
@@ -1250,8 +2287,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             # print(hs)
 
             ## Check if the pointer is withing the bounds of the image
-            Checkooo=self.isWithin([0,0],[512,512],[pos.x()+hs,pos.y()+hs])
-            Checkooo1=self.isWithin([0,0],[512,512],[pos.x()-hs,pos.y()-hs])
+            Checkooo=self.isWithin([0,0],[self.ArrayDicom.shape[0],self.ArrayDicom.shape[1]],[pos.x()+hs,pos.y()+hs])
+            Checkooo1=self.isWithin([0,0],[self.ArrayDicom.shape[0],self.ArrayDicom.shape[1]],[pos.x()-hs,pos.y()-hs])
     
 
             
@@ -1326,7 +2363,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                                 afteridx=0
                             else:
                                 afteridx=i+1
-                    print(beforeidx,afteridx,"EL indices el mafrod sa7 keda checkkkkkk")
+                    # print(beforeidx,afteridx,"EL indices el mafrod sa7 keda checkkkkkk")
 
 
                 ## Setting the new Values of the pointer list 
@@ -1356,15 +2393,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                     if distancebefore>distanceafter:
                         x2=indecies[beforeidx]
                         distance=distancebefore
-                        print(x2,"el x2")
+                        # print(x2,"el x2")
 
                     else:
                         x2=indecies[afteridx]
                         distance=distanceafter
-                        print(x2,"el x2")
+                        # print(x2,"el x2")
 
 
-                    print(x1,x2,"EL EXAt")
+                    # print(x1,x2,"EL EXAt")
                     # print(x,x2)
                     
                     ## Now for all the points in the range of the circumrence of the pointer move them as the pointer moves 
@@ -1376,10 +2413,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                         self.pointslst[1][x]=self.pointslst[1][x]+((1-self.space))*(self.pointslst[1][x]-self.pointerlist[1][0])
 
 
-                    print(distance,"EL distance been 2 largets points")
+                    # print(distance,"EL distance been 2 largets points")
 
                     # check if the distance is greater than a trehsold insert a point in between
-                    print(self.sizeo,"el size ya beeeh")
+                    # print(self.sizeo,"el size ya beeeh")
                     ## could be changed to a defult value 25 for ex
                     if distance > self.sizeo/2:
 
@@ -1447,8 +2484,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.pointerlist[2][0]=self.indexView
 
             # check if the point pressed is and it is in the bounds of the image
-            Checkooo=self.isWithin([0,0],[512,512],[pos.x()+hs,pos.y()+hs])
-            Checkooo1=self.isWithin([0,0],[512,512],[pos.x()-hs,pos.y()-hs])
+            Checkooo=self.isWithin([0,0],[self.ArrayDicom.shape[0],self.ArrayDicom.shape[1]],[pos.x()+hs,pos.y()+hs])
+            Checkooo1=self.isWithin([0,0],[self.ArrayDicom.shape[0],self.ArrayDicom.shape[1]],[pos.x()-hs,pos.y()-hs])
             # if false set the update va to False
             if Checkooo==False or Checkooo1==False:
                 # print("henaa")
@@ -1486,8 +2523,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         This Function is responsible to draw the points on the GUI
         """
         # remove all the lines from the  GUI 
+        
         for i in range(len(self.pointss)):
             self.ui.View.removeItem(self.lines[i]) 
+
 
         # this checks that if the user did not change the default values of the drawing then it sets them to the defult values
         if pointslst == None:
@@ -1510,9 +2549,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.data=[]
             self.data=np.column_stack([xarr, yarr])
             if collor==1:
-                pointsTrue.setData(pos=self.data,symbol='o',size=8, pxMode=False,symbolPen="red",symbolBrush="red")
+                pointsTrue.setData(pos=self.data,symbol='o',size=4, pxMode=False,symbolPen="red",symbolBrush="red")
             else:
-                pointsTrue.setData(pos=self.data,symbol='o',size=8, pxMode=False,symbolPen="blue",symbolBrush="blue")
+                pointsTrue.setData(pos=self.data,symbol='o',size=4, pxMode=False,symbolPen="blue",symbolBrush="blue")
 
             datafake=[]
             xarr.append(xarr[0])
@@ -1536,9 +2575,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 # Clearing the gui and then redrawing the new points again
                 self.ui.View.removeItem(points)
                 if collor==1 :
-                    points.setData(pos=self.data,adj=adj,pen="blue",symbol='o',size=1, pxMode=True,symbolPen="blue",symbolBrush="blue")
+                    points.setData(pos=self.data,adj=adj,pen="blue",symbol='o',size=0.5, pxMode=True,symbolPen="blue",symbolBrush="blue")
                 else:
-                    points.setData(pos=self.data,adj=adj,pen="red",symbol='o',size=1, pxMode=True,symbolPen="red",symbolBrush="red")
+                    points.setData(pos=self.data,adj=adj,pen="red",symbol='o',size=0.5, pxMode=True,symbolPen="red",symbolBrush="red")
 
                 self.ui.View.addItem(points)
                 self.ui.View.removeItem(pointsTrue)
@@ -1677,7 +2716,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     #     p = Path(tupVerts) # make a polygon
     #     grid = p.contains_points(self.mespoints)
-    #     # mask = grid.reshape(512,512) # now you have a mask with points inside a polygon
+    #     # mask = grid.reshape(self.ArrayDicom.shape[1],self.ArrayDicom.shape[1]) # now you have a mask with points inside a polygon
 
     #     count = np.count_nonzero(grid)
     #     self.points.Area=count
@@ -1714,6 +2753,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.firstime[self.indexView]=0
 
+        print(self.ArrayDicom.shape[0],self.ArrayDicom.shape[1])
+
 
 
     # Get Position and Insert Function
@@ -1728,7 +2769,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         y = event.pos().y()
         # print(x,y,"points clickedddd")
         z=self.indexView
-        if self.DrawpointsVar==True and self.pointdelBool==False and self.circleVar==False and self.ellipseVar==False and self.drawEditvar==False and (self.outter==True or self.inner==True):
+
+        if self.DrawpointsVar==True and self.pointdelBool==False and self.circleVar==False and self.ellipseVar==False and self.drawEditvar==False and (self.outter==True or self.inner==True) and self.insertionVar==False:
+            
 
             # get the x,y,z of the user click
 
@@ -1781,6 +2824,31 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         elif self.DrawpointsVar==True and self.pointdelBool==False and self.circleVar==False and self.ellipseVar==True and (self.outter==True or self.inner==True):
             self.DeleteAllPoints()
             self.DrawEllipse(x,y)
+        elif self.insertionVar==True:
+            # self.ui.View.removeItem(self.InsertXshape)
+            self.InsertionPoints.append([x,y,z])
+            print(self.InsertionPoints)
+            data,xarr,yarr=[],[],[]
+            for i in range(len(self.InsertionPoints)):
+                xarr.append(self.InsertionPoints[i][0])
+                yarr.append(self.InsertionPoints[i][1])
+            data=np.column_stack([xarr,yarr])
+            self.InsertXshape.setData(pos=data,symbol='x',size=4, pxMode=False,symbolPen="green",symbolBrush="green")
+            self.ui.View.addItem(self.InsertXshape)
+            if len(self.InsertionPoints)==1:
+                self.ui.ToolBarLabel.setText("Please Select Insertion Point 2")
+            if len(self.InsertionPoints)==2:
+                self.insertionVar=False
+                print(self.InsertionPoints,"EL InsertionPoints")
+                self.ui.ToolBarLabel.setText("Insertion Points added")
+                if self.inner==True:
+                    self.InsertionPoints2[self.indexView]=self.InsertionPoints
+                    print(self.InsertionPoints2[self.indexView],self.InsertionPoints)
+                    np.save('Insertionlst2.npy', self.InsertionPoints2[self.indexView],allow_pickle=True)
+                else:
+                    self.InsertionPoints1[self.indexView]=self.InsertionPoints
+                    print(self.InsertionPoints1[self.indexView],self.InsertionPoints)
+                    np.save('Insertionlst1.npy', self.InsertionPoints1[self.indexView],allow_pickle=True)
 
         else:
             if  self.newEllipseVar== True:
@@ -1791,7 +2859,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 self.ellipsecounter+=1
             else:
              return None
-    
+        
     # calculate the distance between two given points
     def calc_distance(self,p1, p2):
         return sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)

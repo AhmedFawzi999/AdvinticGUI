@@ -15,10 +15,37 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="1">
-     <layout class="QHBoxLayout" name="horizontalLayout"/>
+    <item row="1" column="1">
+     <widget class="QSpinBox" name="spinBox">
+      <property name="maximumSize">
+       <size>
+        <width>100</width>
+        <height>16777215</height>
+       </size>
+      </property>
+     </widget>
     </item>
     <item row="1" column="0">
+     <widget class="QLabel" name="ToolBarLabel">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="QPushButton" name="OkayPush">
+      <property name="maximumSize">
+       <size>
+        <width>30</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>OK</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="3">
      <widget class="PlotWidget" name="View"/>
     </item>
    </layout>
@@ -37,6 +64,7 @@
    <addaction name="actionaddPoints"/>
    <addaction name="actionouter"/>
    <addaction name="actioninner"/>
+   <addaction name="actioninsertionpoints"/>
    <addaction name="actionTranslate"/>
    <addaction name="actionscale"/>
    <addaction name="actionactionXscale"/>
@@ -49,6 +77,7 @@
    <addaction name="actionedit"/>
    <addaction name="actionRoundPointer"/>
    <addaction name="actionregions"/>
+   <addaction name="actionsegments"/>
    <addaction name="separator"/>
    <addaction name="separator"/>
    <addaction name="actionOpen_Dicom"/>
@@ -59,7 +88,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/file_open_FILL0_wght400_GRAD200_opsz48.png</normaloff>C:/Users/asemi/Downloads/file_open_FILL0_wght400_GRAD200_opsz48.png</iconset>
+     <normaloff>C:/Users/asemi/Downloads/file_open_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/file_open_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>Open Dicom</string>
@@ -71,7 +100,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/search_FILL1_wght600_GRAD200_opsz48.png</normaloff>C:/Users/asemi/Downloads/search_FILL1_wght600_GRAD200_opsz48.png</iconset>
+     <normaloff>C:/Users/asemi/Downloads/search_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/search_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>Zoom</string>
@@ -83,7 +112,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/shape_line_FILL0_wght400_GRAD200_opsz48.png</normaloff>C:/Users/asemi/Downloads/shape_line_FILL0_wght400_GRAD200_opsz48.png</iconset>
+     <normaloff>C:/Users/asemi/Downloads/shape_line_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/shape_line_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>addPoints</string>
@@ -92,7 +121,7 @@
   <action name="actiondeleteShape">
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/delete_FILL0_wght400_GRAD200_opsz48.png</normaloff>C:/Users/asemi/Downloads/delete_FILL0_wght400_GRAD200_opsz48.png</iconset>
+     <normaloff>C:/Users/asemi/Downloads/delete_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/delete_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>deleteShape</string>
@@ -104,7 +133,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/hide_source_FILL0_wght600_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/hide_source_FILL0_wght600_GRAD0_opsz48.png</iconset>
+     <normaloff>C:/Users/asemi/Downloads/block_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/block_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>DelPoint</string>
@@ -116,7 +145,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/open_with_FILL0_wght500_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/open_with_FILL0_wght500_GRAD0_opsz48.png</iconset>
+     <normaloff>C:/Users/asemi/Downloads/open_with_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/open_with_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>Translate</string>
@@ -138,7 +167,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/aspect_ratio_FILL0_wght600_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/aspect_ratio_FILL0_wght600_GRAD0_opsz48.png</iconset>
+     <normaloff>C:/Users/asemi/Downloads/aspect_ratio_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/aspect_ratio_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>scale</string>
@@ -239,6 +268,16 @@
    </property>
    <property name="text">
     <string>regions</string>
+   </property>
+  </action>
+  <action name="actioninsertionpoints">
+   <property name="text">
+    <string>insertionpoints</string>
+   </property>
+  </action>
+  <action name="actionsegments">
+   <property name="text">
+    <string>segments</string>
    </property>
   </action>
  </widget>
