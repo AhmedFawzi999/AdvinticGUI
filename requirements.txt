@@ -8,3 +8,4 @@ ipywidgets
 PyQt5
 pyqtgraph
 vtk
+opencv-python
