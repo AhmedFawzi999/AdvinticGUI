@@ -88,7 +88,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/file_open_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/file_open_FILL0_wght700_GRAD0_opsz48.png</iconset>
+     <normaloff>file_open_FILL0_wght700_GRAD0_opsz48.png</normaloff>file_open_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>Open Dicom</string>
@@ -100,7 +100,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/search_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/search_FILL0_wght700_GRAD0_opsz48.png</iconset>
+     <normaloff>search_FILL0_wght700_GRAD0_opsz48.png</normaloff>search_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>Zoom</string>
@@ -112,7 +112,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/shape_line_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/shape_line_FILL0_wght700_GRAD0_opsz48.png</iconset>
+     <normaloff>shape_line_FILL0_wght700_GRAD0_opsz48.png</normaloff>shape_line_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>addPoints</string>
@@ -121,7 +121,7 @@
   <action name="actiondeleteShape">
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/delete_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/delete_FILL0_wght700_GRAD0_opsz48.png</iconset>
+     <normaloff>delete_FILL0_wght700_GRAD0_opsz48.png</normaloff>delete_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>deleteShape</string>
@@ -133,7 +133,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/block_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/block_FILL0_wght700_GRAD0_opsz48.png</iconset>
+     <normaloff>block_FILL0_wght700_GRAD0_opsz48.png</normaloff>block_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>DelPoint</string>
@@ -145,7 +145,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/open_with_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/open_with_FILL0_wght700_GRAD0_opsz48.png</iconset>
+     <normaloff>open_with_FILL0_wght700_GRAD0_opsz48.png</normaloff>open_with_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>Translate</string>
@@ -167,7 +167,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/aspect_ratio_FILL0_wght700_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/aspect_ratio_FILL0_wght700_GRAD0_opsz48.png</iconset>
+     <normaloff>aspect_ratio_FILL0_wght700_GRAD0_opsz48.png</normaloff>aspect_ratio_FILL0_wght700_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>scale</string>
@@ -179,7 +179,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/resizenorthsouth_100184.png</normaloff>C:/Users/asemi/Downloads/resizenorthsouth_100184.png</iconset>
+     <normaloff>resizenorthsouth_100184.png</normaloff>resizenorthsouth_100184.png</iconset>
    </property>
    <property name="text">
     <string>Yscale</string>
@@ -191,7 +191,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/resizeeastwest_100180.png</normaloff>C:/Users/asemi/Downloads/resizeeastwest_100180.png</iconset>
+     <normaloff>resizeeastwest_100180.png</normaloff>resizeeastwest_100180.png</iconset>
    </property>
    <property name="text">
     <string>Xscale</string>
@@ -203,7 +203,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/circle_FILL0_wght400_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/circle_FILL0_wght400_GRAD0_opsz48.png</iconset>
+     <normaloff>circle_FILL0_wght400_GRAD0_opsz48.png</normaloff>circle_FILL0_wght400_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>circle</string>
@@ -215,7 +215,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/ellipse_adobe_illustrator_tool_circle_icon_189052.png</normaloff>C:/Users/asemi/Downloads/ellipse_adobe_illustrator_tool_circle_icon_189052.png</iconset>
+     <normaloff>ellipse_adobe_illustrator_tool_circle_icon_189052.png</normaloff>ellipse_adobe_illustrator_tool_circle_icon_189052.png</iconset>
    </property>
    <property name="text">
     <string>elipse</string>
@@ -227,7 +227,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/draw_FILL0_wght400_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/draw_FILL0_wght400_GRAD0_opsz48.png</iconset>
+     <normaloff>draw_FILL0_wght400_GRAD0_opsz48.png</normaloff>draw_FILL0_wght400_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>edit</string>
@@ -239,7 +239,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/radio_button_checked_FILL0_wght500_GRAD0_opsz48.png</normaloff>C:/Users/asemi/Downloads/radio_button_checked_FILL0_wght500_GRAD0_opsz48.png</iconset>
+     <normaloff>radio_button_checked_FILL0_wght500_GRAD0_opsz48.png</normaloff>radio_button_checked_FILL0_wght500_GRAD0_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>RoundPointer</string>
@@ -264,7 +264,7 @@
   <action name="actionregions">
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/asemi/Downloads/donut_small_FILL1_wght500_GRAD200_opsz48.png</normaloff>C:/Users/asemi/Downloads/donut_small_FILL1_wght500_GRAD200_opsz48.png</iconset>
+     <normaloff>donut_small_FILL1_wght500_GRAD200_opsz48.png</normaloff>donut_small_FILL1_wght500_GRAD200_opsz48.png</iconset>
    </property>
    <property name="text">
     <string>regions</string>
